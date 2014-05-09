@@ -1,7 +1,7 @@
 #!/bin/bash
 
 audio_programs_Darwin=(afplay)
-audio_programs_Linux=(aplay play cvlc mplayer ffplay)
+audio_programs_Linux=(mpg123 mplayer ffplay cvlc)
 
 function get_audio_program {
     local result=$1
