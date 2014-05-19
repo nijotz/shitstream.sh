@@ -116,6 +116,11 @@ function command_connect {
     helptext="Connect to a stream of shit"
     helptext="Usage: connect <server> <port>"
 
+    if [ $stream_pid -ne 0 ]; then
+        echo "Currently streaming, disconnect first"
+        return
+    fi
+
     (
         trap exit SIGINT SIGTERM SIGHUP
         exec 2>/dev/null
