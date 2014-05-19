@@ -173,6 +173,41 @@ function command_disconnect {
     status_connection="Not connected"
 }
 
+function command_shit {
+    helptext[0]="Take a shit in the shitstream"
+    helptext[1]="Usage: shit [-f file] [-u url]"
+    helptext[2]="  file	A local mp3 file to add to the playlist"
+    helptext[3]="  url	A URL to a song on a site supported by anything2mp3.com"
+
+    function shit_the_bed {
+        echo "${bld}You shit the bed${nrm}"
+        printf -- '%s\n' "${helptext[@]:1}"
+        return
+    }
+
+    if [ -z "$*" ]; then shit_the_bed; return; fi
+    if [ $# -ne 2 ]; then shit_the_bed; return; fi
+
+    if [ $1 == -f ]; then
+        mp3=$(echo $2 | sed "s!^\~!${HOME}!")
+
+        if [ ! -f $mp3 ]; then
+            echo "File not found: $mp3"
+            return
+        fi
+
+        cat $mp3 | ncat 0.0.0.0 8675
+        return
+    fi
+
+    if [ "$1" == "-u" ]; then
+        echo "Eventually..."
+        return
+    fi
+
+    shit_the_bed
+}
+
 function command_help {
     helptext="Display help for commands"
     helptext="Usage: help <command> [command2] [command3] ..."
