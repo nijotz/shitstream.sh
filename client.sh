@@ -58,14 +58,21 @@ trap command_quit SIGINT SIGTERM SIGHUP EXIT
 
 function command_connect {
     helptext="Connect to a stream of shit"
-    helptext=
     helptext="Usage: connect <server> <port>"
 
-    (while true; do
-        ncat --recv-only $1 $2 > /tmp/mp3
-        get_audio_program program
-        $program /tmp/mp3
-    done) &
+    (
+        trap exit SIGINT SIGTERM SIGHUP
+        while true; do
+            ncat --recv-only $1 $2 > /tmp/mp3
+            if [ $? ]; then
+                echo Connection refused, retrying in 5 seconds...
+                sleep 5
+            fi
+            get_audio_program program
+            $program /tmp/mp3
+        done
+    ) &
+
     shit_pid=$!
 }
 
