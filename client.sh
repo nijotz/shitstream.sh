@@ -58,7 +58,7 @@ function handle_input {
         command_$command $*
     fi
 
-    history -s $command $*
+    history -s $command $*  # Append command to history
 }
 
 function show_status_bar {
@@ -70,6 +70,12 @@ function show_status_bar {
     tput rc  # Restore cursor position
 }
 
+function begin {
+    history -r ~/.shit_history  # Load history file for readline
+    tput smcup  # Save terminal screen
+    prompt
+}
+
 function command_quit {
     helptext="duh."
 
@@ -79,7 +85,7 @@ function command_quit {
         wait $proc
     done
 
-    history -w ~/.shit_history
+    history -w ~/.shit_history  # Write history file
     tput rmcup  # Restore original terminal output
     exit
 }
@@ -136,6 +142,4 @@ function command_help {
     fi
 }
 
-history -r ~/.shit_history
-tput smcup  # Save terminal screen
-prompt
+begin
