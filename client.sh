@@ -123,7 +123,12 @@ function command_connect {
     fi
 
     (
-        trap exit SIGINT SIGTERM SIGHUP
+        function cleanup {
+            jobs -p | xargs kill
+            exit
+        }
+
+        trap cleanup SIGINT SIGTERM SIGHUP
 
         function update_status_bar {
             status_connection=$1
@@ -135,11 +140,13 @@ function command_connect {
             err=$?
             if [ $err -ne 0 ]; then
                 update_status_bar "Connection failure ($output), retrying in 5 seconds..."
-                sleep 5
+                sleep 5 &
+                wait $!
             else
                 update_status_bar "Connected to $1 $2"
                 get_audio_program program
-                $program /tmp/mp3
+                $program /tmp/mp3 &
+                wait $!
             fi
         done
     ) &
