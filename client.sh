@@ -45,7 +45,7 @@ function prompt {
         show_status_bar
 
         # Read input with readline support (-e), ctrl-d will quit
-        read -e -p "${mgn}shit${nrm}> " input
+        read -e -p "shit> " input
         test $? != 0 && command_quit
 
         handle_input $input
