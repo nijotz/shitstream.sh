@@ -43,6 +43,19 @@ function handle_input {
     fi
 }
 
+function command_quit {
+    helptext="duh."
+
+    for proc in $(jobs -p)
+    do
+        kill $proc
+        wait $proc
+    done
+    exit
+}
+
+trap command_quit SIGINT SIGTERM SIGHUP EXIT
+
 function command_connect {
     helptext="Connect to a stream of shit"
     helptext=
