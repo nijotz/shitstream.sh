@@ -35,7 +35,9 @@ function handle_input {
     command=$1
     shift
     if ! output=$(set | grep "command_${command} ()"); then
-        echo Invalid command: $command
+        if [ "$output" != "" ]; then
+            echo Invalid command: $command
+        fi
     else
         command_$command $*
     fi
