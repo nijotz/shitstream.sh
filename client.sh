@@ -1,11 +1,23 @@
 #!/bin/bash
 
+# Audio programs to use for playing mp3s
 audio_programs_Darwin=(afplay)
 audio_programs_Linux=(mpg123 mplayer ffplay cvlc)
 
 API_VERSION=1
 
+# Store pid of streaming process
 shit_pid=0
+
+# Initialize status messages
+status_connection="Not connected"
+status_current_mp3="Not connected"
+
+# Used for setting text color/attributes
+bld=$(tput bold)
+nrm=$(tput sgr0)
+grn=$(tput setaf 2)
+blu=$(tput setaf 4)
 
 function get_audio_program {
     local result=$1
@@ -26,6 +38,7 @@ function get_audio_program {
 
 function prompt {
     while true; do
+        show_status_bar
         read -e -p 'shit> ' input
         handle_input $input
     done
@@ -48,6 +61,15 @@ function handle_input {
     history -s $command $*
 }
 
+function show_status_bar {
+    tput sc  # Save cursor position
+    tput cup 0 0  # Move to top left
+
+    echo "${grn}[${blu}Server:${nrm} ${status_connection}${grn}][${blu}Song:${nrm} $status_current_mp3${grn}]${nrm}"
+
+    tput rc  # Restore cursor position
+}
+
 function command_quit {
     helptext="duh."
 
@@ -58,6 +80,7 @@ function command_quit {
     done
 
     history -w ~/.shit_history
+    tput rmcup  # Restore original terminal output
     exit
 }
 
@@ -100,22 +123,19 @@ function command_help {
     helptext="Usage: help <command> [command2] [command3] ..."
 
     local command
-    local bold
-    local normal
 
     if [ -z "$@" ]; then
-        for command in $(set | grep ^command_ | sed 's/(). *//'); do
+        for command in $(set | grep ^command_ | sed 's/(). *//' | sort); do
             echo $command | sed -r 's/^command_([A-Za-z_]*).*/\1/'
         done
     else
         for command in "$@"; do
-            bold=`tput bold`
-            normal=`tput sgr0`
-            echo "${bold}${command}${normal}"
+            echo "${bld}${command}${nrm}"
             declare -f command_$command | grep '[h]elptext=' | sed 's/^ *[h]elptext=["'"'"']//g' | sed 's/['"'"'"];//'
         done
     fi
 }
 
 history -r ~/.shit_history
+tput smcup  # Save terminal screen
 prompt
