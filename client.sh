@@ -4,8 +4,6 @@
 audio_programs_Darwin=(afplay)
 audio_programs_Linux=(mpg123 mplayer ffplay cvlc)
 
-API_VERSION=1
-
 # Store pid of streaming process
 stream_pid=0
 
@@ -41,6 +39,10 @@ function prompt {
     while true; do
         show_status_bar
         read -e -p "${mgn}shit${nrm}> " input
+        status=$?
+        if [ $status != 0 ]; then
+            command_quit
+        fi
         # TODO: Improve how stream status is passed from the child process
         test -f /tmp/toilet && source /tmp/toilet
         handle_input $input
