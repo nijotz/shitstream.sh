@@ -18,6 +18,7 @@ grn=$(tput setaf 2)
 blu=$(tput setaf 4)
 mgn=$(tput setaf 5)
 
+
 function get_audio_program {
     local result=$1
     os=$(uname)
@@ -37,33 +38,35 @@ function get_audio_program {
 
 function prompt {
     while true; do
-        show_status_bar
-        read -e -p "${mgn}shit${nrm}> " input
-        status=$?
-        if [ $status != 0 ]; then
-            command_quit
-        fi
         # TODO: Improve how stream status is passed from the child process
+        # The streaming subprocess puts its status strings in /tmp/toilet.
+        # Load it for the status bar.
         test -f /tmp/toilet && source /tmp/toilet
+        show_status_bar
+
+        # Read input with readline support (-e), ctrl-d will quit
+        read -e -p "${mgn}shit${nrm}> " input
+        test $? != 0 && command_quit
+
         handle_input $input
     done
 }
 
 function handle_input {
-    command=$1
-    shift
+    command=${1}; shift
 
-    if [ "$command" == "" ]; then
-        return
-    fi
+    # Ignore empty input
+    test "$command" == "" && return
 
+    # Append command to history
+    history -s $command $*
+
+    # Look for the command by looking for a function named after it
     if ! output=$(declare -f | grep "command_${command} ()"); then
         echo Invalid command: $command
     else
         command_$command $*
     fi
-
-    history -s $command $*  # Append command to history
 }
 
 function show_status_bar {
@@ -86,8 +89,7 @@ function begin {
 function command_quit {
     helptext="duh."
 
-    for proc in $(jobs -p)
-    do
+    for proc in $(jobs -p); do
         kill $proc
         wait $proc
     done
