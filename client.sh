@@ -18,6 +18,7 @@ bld=$(tput bold)
 nrm=$(tput sgr0)
 grn=$(tput setaf 2)
 blu=$(tput setaf 4)
+mgn=$(tput setaf 5)
 
 function get_audio_program {
     local result=$1
@@ -39,7 +40,7 @@ function get_audio_program {
 function prompt {
     while true; do
         show_status_bar
-        read -e -p 'shit> ' input
+        read -e -p "${mgn}shit${nrm}> " input
         handle_input $input
     done
 }
