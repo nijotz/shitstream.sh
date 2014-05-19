@@ -55,7 +55,7 @@ function handle_input {
         return
     fi
 
-    if ! output=$(set | grep "command_${command} ()"); then
+    if ! output=$(declare -f | grep "command_${command} ()"); then
         echo Invalid command: $command
     else
         command_$command $*
@@ -168,7 +168,7 @@ function command_help {
     local command
 
     if [ -z "$@" ]; then
-        for command in $(set | grep ^command_ | sed 's/(). *//' | sort); do
+        for command in $(declare -f | grep ^command_ | sed 's/(). *//' | sort); do
             echo $command | sed -r 's/^command_([A-Za-z_]*).*/\1/'
         done
     else
