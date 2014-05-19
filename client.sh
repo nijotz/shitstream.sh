@@ -41,6 +41,8 @@ function prompt {
     while true; do
         show_status_bar
         read -e -p "${mgn}shit${nrm}> " input
+        # TODO: Improve how stream status is passed from the child process
+        test -f /tmp/toilet && source /tmp/toilet
         handle_input $input
     done
 }
@@ -90,6 +92,7 @@ function command_quit {
     command_savecfg
     history -w ~/.shit_history  # Write history file
     tput rmcup  # Restore original terminal output
+    rm -f /tmp/toilet
     exit
 }
 trap command_quit SIGINT SIGTERM SIGHUP EXIT
@@ -115,14 +118,23 @@ function command_connect {
 
     (
         trap exit SIGINT SIGTERM SIGHUP
+        exec 2>/dev/null
+
+        function update_status_bar {
+            status_connection=$1
+            echo "status_connection=\"$1\"" > /tmp/toilet
+            show_status_bar
+        }
         while true; do
             ncat --recv-only $1 $2 > /tmp/mp3
             if [ $? ]; then
-                echo Connection refused, retrying in 5 seconds...
+                update_status_bar "Connection refused, retrying in 5 seconds..."
                 sleep 5
+            else
+                update_status_bar "Connected to $1 $2"
+                get_audio_program program
+                $program /tmp/mp3
             fi
-            get_audio_program program
-            $program /tmp/mp3
         done
     ) &
 
@@ -133,12 +145,15 @@ function command_disconnect {
     helptext="Disconnect from current stream of shit"
     helptext="Usage: disconnect"
 
-    if [ $shit_pid -ne 0 ]; then
-        kill $shit_pid
-        shit_pid=0
+    if [ $stream_pid -ne 0 ]; then
+        kill $stream_pid
+        stream_pid=0
+        rm -f /tmp/toilet
     else
         echo Not currently streaming
     fi
+
+    status_connection="Not connected"
 }
 
 function command_help {
