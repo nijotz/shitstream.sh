@@ -124,7 +124,6 @@ function command_connect {
 
     (
         trap exit SIGINT SIGTERM SIGHUP
-        exec 2>/dev/null
 
         function update_status_bar {
             status_connection=$1
@@ -132,9 +131,10 @@ function command_connect {
             show_status_bar
         }
         while true; do
-            ncat --recv-only $1 $2 > /tmp/mp3
-            if [ $? ]; then
-                update_status_bar "Connection refused, retrying in 5 seconds..."
+            output=$(ncat --recv-only $1 $2 2>&1 > /tmp/mp3)
+            err=$?
+            if [ $err -ne 0 ]; then
+                update_status_bar "Connection failure ($output), retrying in 5 seconds..."
                 sleep 5
             else
                 update_status_bar "Connected to $1 $2"
