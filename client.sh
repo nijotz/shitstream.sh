@@ -173,8 +173,12 @@ function command_help {
         done
     else
         for command in "$@"; do
-            echo "${bld}${command}${nrm}"
-            declare -f command_$command | grep '[h]elptext=' | sed 's/^ *[h]elptext=["'"'"']//g' | sed 's/['"'"'"];//'
+            if [ "$(declare -f | grep -c command_$command)" -eq 0 ]; then
+                echo "No help content found for ${bld}${command}${nrm}"
+            else
+                echo "${bld}${command}${nrm}"
+                declare -f command_$command | grep '[h]elptext=' | sed 's/^ *[h]elptext=["'"'"']//g' | sed 's/['"'"'"];//'
+            fi
         done
     fi
 }
