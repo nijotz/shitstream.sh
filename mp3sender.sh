@@ -1,8 +1,8 @@
 #!/bin/bash
 
-LOCKFILE="shit.lock"
+source mp3base.sh
+
 CURRENT="current"
-MP3DIR="mp3s"
 STANDBY="trumpet.mp3"
 
 if [ ! -d $MP3DIR ]; then
