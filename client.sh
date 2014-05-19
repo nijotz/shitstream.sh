@@ -67,6 +67,7 @@ function handle_input {
 function show_status_bar {
     tput sc  # Save cursor position
     tput cup 0 0  # Move to top left
+    tput el  # Clear to end of line
 
     echo "${grn}[${blu}Server:${nrm} ${status_connection}${grn}][${blu}Song:${nrm} $status_current_mp3${grn}]${nrm}"
 
