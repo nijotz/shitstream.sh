@@ -7,7 +7,7 @@ audio_programs_Linux=(mpg123 mplayer ffplay cvlc)
 API_VERSION=1
 
 # Store pid of streaming process
-shit_pid=0
+stream_pid=0
 
 # Initialize status messages
 status_connection="Not connected"
@@ -71,6 +71,7 @@ function show_status_bar {
 }
 
 function begin {
+    command_loadcfg
     history -r ~/.shit_history  # Load history file for readline
     tput smcup  # Save terminal screen
     prompt
@@ -85,12 +86,27 @@ function command_quit {
         wait $proc
     done
 
+    command_savecfg
     history -w ~/.shit_history  # Write history file
     tput rmcup  # Restore original terminal output
     exit
 }
-
 trap command_quit SIGINT SIGTERM SIGHUP EXIT
+
+function command_loadcfg {
+    helptext="Load configuration values from a file"
+    helptext="Usage: loadcfg [cfgfile]"
+    helptext="  cfgfile	Config file to load (default: ~/.shitstream)"
+    source ${1:-~/.shitstream}
+}
+
+function command_savecfg {
+    helptext="Save configuration values to a file"
+    helptext="Usage: savecfg [cfgfile]"
+    helptext="  cfgfile	Config file to load (default: ~/.shitstream)"
+
+    set | grep ^SHIT_ > ~/.shitstream
+}
 
 function command_connect {
     helptext="Connect to a stream of shit"
@@ -109,7 +125,7 @@ function command_connect {
         done
     ) &
 
-    shit_pid=$!
+    stream_pid=$!
 }
 
 function command_disconnect {
