@@ -34,13 +34,18 @@ function prompt {
 function handle_input {
     command=$1
     shift
+
+    if [ "$command" == "" ]; then
+        return
+    fi
+
     if ! output=$(set | grep "command_${command} ()"); then
-        if [ "$output" != "" ]; then
-            echo Invalid command: $command
-        fi
+        echo Invalid command: $command
     else
         command_$command $*
     fi
+
+    history -s $command $*
 }
 
 function command_quit {
@@ -51,6 +56,8 @@ function command_quit {
         kill $proc
         wait $proc
     done
+
+    history -w ~/.shit_history
     exit
 }
 
@@ -92,6 +99,10 @@ function command_help {
     helptext="Display help for commands"
     helptext="Usage: help <command> [command2] [command3] ..."
 
+    local command
+    local bold
+    local normal
+
     if [ -z "$@" ]; then
         for command in $(set | grep ^command_ | sed 's/(). *//'); do
             echo $command | sed -r 's/^command_([A-Za-z_]*).*/\1/'
@@ -106,4 +117,5 @@ function command_help {
     fi
 }
 
+history -r ~/.shit_history
 prompt
