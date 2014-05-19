@@ -76,6 +76,18 @@ function command_connect {
     shit_pid=$!
 }
 
+function command_disconnect {
+    helptext="Disconnect from current stream of shit"
+    helptext="Usage: disconnect"
+
+    if [ $shit_pid -ne 0 ]; then
+        kill $shit_pid
+        shit_pid=0
+    else
+        echo Not currently streaming
+    fi
+}
+
 function command_help {
     helptext="Display help for commands"
     helptext="Usage: help <command> [command2] [command3] ..."
