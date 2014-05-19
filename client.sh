@@ -224,7 +224,13 @@ function command_help {
                 echo "No help content found for ${bld}${command}${nrm}"
             else
                 echo "${bld}${command}${nrm}"
-                declare -f command_$command | grep '[h]elptext=' | sed 's/^ *[h]elptext=["'"'"']//g' | sed 's/['"'"'"];//'
+
+                # The [][0-9]* will optionally match helptext arrays, all the
+                # quoting is to match double or single quotes
+                declare -f command_$command |
+                    grep '[h]elptext[][0-9]*=' |
+                    sed 's/^ *[h]elptext[][0-9]*=["'"'"']//g' |
+                    sed 's/['"'"'"];//'
             fi
         done
     fi
