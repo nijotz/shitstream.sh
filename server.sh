@@ -1,7 +1,6 @@
 #!/bin/bash
 
-function handle_sigint()
-{
+function handle_sigint {
     for proc in $(jobs -p)
     do
         echo killing $proc
