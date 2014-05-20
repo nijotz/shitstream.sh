@@ -156,6 +156,8 @@ function command_connect {
     ) &
 
     stream_pid=$!
+    shit_server=$1
+    shit_port=$2
 }
 
 function command_disconnect {
@@ -165,6 +167,8 @@ function command_disconnect {
     if [ $stream_pid -ne 0 ]; then
         kill $stream_pid
         stream_pid=0
+        shit_server=""
+        shit_port=""
         rm -f /tmp/toilet
     else
         echo Not currently streaming
@@ -185,8 +189,15 @@ function command_shit {
         return
     }
 
+    # Error message on bad usage
     if [ -z "$*" ]; then shit_the_bed; return; fi
     if [ $# -ne 2 ]; then shit_the_bed; return; fi
+
+    # Can only upload if connected
+    if [ $stream_pid -eq 0 ]; then
+        echo "Not connected, you gotta be in the stream with everyone else to shit in it"
+        return
+    fi
 
     if [ $1 == -f ]; then
         mp3=$(echo $2 | sed "s!^\~!${HOME}!")
@@ -196,12 +207,14 @@ function command_shit {
             return
         fi
 
-        cat $mp3 | ncat 0.0.0.0 8675
+        cat $mp3 | ncat $shit_server 8675 # TODO: fix hard-coded port $shit_port
+        echo "Sent MP3 to stream"
         return
     fi
 
-    if [ "$1" == "-u" ]; then
-        echo "Eventually..."
+    if [ $1 == -u ]; then
+        echo $2 | ncat $shit_server 8675 # TODO: $shit_port
+        echo "Sent URL to stream"
         return
     fi
 
@@ -215,7 +228,7 @@ function command_help {
     local command
 
     if [ -z "$@" ]; then
-        for command in $(declare -f | grep ^command_ | sed 's/(). *//' | sort); do
+        for command in $(declare -f | grep ^command_ | sed 's/(). *//'); do
             echo $command | sed -r 's/^command_([A-Za-z_]*).*/\1/'
         done
     else

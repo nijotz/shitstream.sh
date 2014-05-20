@@ -15,5 +15,4 @@ Example:
 
 TODO:
 * Keep old mp3s around for streaming when nothing is queued
-* Client with readline/prompt/commands for uploading mp3s
 * Client should use nc/netcat/ncat, whatever is available
