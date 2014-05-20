@@ -30,7 +30,8 @@ function download_youtube_mp3 {
     local alreadyexists=$(echo "$output" | grep -c 'exists, skipping')
     if [ $alreadyexists -gt 0 ]; then
         v "MP3 exists, skipping conversion"
-        local mp3=$(echo output | sed 's/.*Post-process file \(.*\) exists, skipping/\1/')
+        local mp3namestart='.*Post-process file \(.*\) exists, skipping'
+        local mp3=$(echo "$output" | grep "$mp3namestart" | sed "s/$mp3namestart/\1/")
     else
         local mp3namestart='^.ffmpeg. Destination: '
         local mp3=$(echo "$output" | grep "$mp3namestart" | sed "s/$mp3namestart//")
