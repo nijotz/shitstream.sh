@@ -27,22 +27,26 @@ if [ -f $CURRENT ]; then
 fi
 
 # Expire the currently streaming mp3 if necessary
-if [ ! -z "$expires" ] && [ $expires -lt $(date +%s) ]; then
+current_time=$(date +%s)
+v "Song expires at: $expires"
+v "Date is: $current_time"
+if [ ! -z "$expires" ] && [ $expires -lt $current_time ]; then
     v "Expiring current song"
     rm $current_mp3
     cat "/dev/null" > $CURRENT
 fi
 
 # Stream the file if it exists
-if [ ! -z "$current" ] && [ -f "$current" ]; then
+if [ ! -z "$current_mp3" ] && [ -f "$current_mp3" ]; then
     v "Streaming current song"
-    cat $current >&2
+    cat $current_mp3 >&2
     exit
 fi
 
 # Find the next mp3 to play
+v "Finding another mp3 to play"
 for file in $(ls | grep '^[0-9\.]*\.mp3$'); do
-    v "Finding another mp3 to play"
+    v "Testing $file"
     length=$(sox -t mp3 "$file" -n stat 2>&1 | grep Length | sed 's/[^0-9.]//g' | sed 's/\..*//')
 
     # Not a valid mp3
@@ -54,7 +58,7 @@ for file in $(ls | grep '^[0-9\.]*\.mp3$'); do
 
     # Found a file, stream and break from loop
     echo $file > $CURRENT
-    echo $(( $length + $(date +%s) ))>> $CURRENT
+    echo $(( $length + $current_time ))>> $CURRENT
 
     v "Streaming $file"
     cat $file >&2
