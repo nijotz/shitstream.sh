@@ -90,10 +90,11 @@ function begin {
 function command_quit {
     helptext="duh."
 
-    for proc in $(jobs -p); do
-        kill $proc
-        wait $proc
-    done
+    if [ $stream_pid -ne 0 ]; then
+        command_disconnect
+    fi
+
+    pkill -P $$
 
     command_savecfg
     history -w ~/.shit_history  # Write history file
