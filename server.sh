@@ -9,9 +9,5 @@ function handle_sigint {
 }
 
 trap handle_sigint SIGINT
-
-ncat -vlk -c 'bash mp3receiver.sh' 0.0.0.0 8675 &
-#ncat -vlk -c 'bash mp3sender.sh' 0.0.0.0 6753 &
-
+ncat -vlk -c 'bash connhandle.sh' 0.0.0.0 8675 &
 wait %1
-#wait %2
