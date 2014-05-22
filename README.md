@@ -14,6 +14,6 @@ Example:
     ♫ ♪ ♩
 
 TODO:
-* Develop protocol so one port can be used, users, passwords, metadata
 * Keep old mp3s around for streaming when nothing is queued
 * Client should use nc/netcat/ncat, whatever is available
+* Unit tests

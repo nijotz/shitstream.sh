@@ -19,6 +19,11 @@ blu=$(tput setaf 4)
 mgn=$(tput setaf 5)
 
 
+# For now just echo, will add verbosity options later
+function v {
+    echo $*
+}
+
 function get_audio_program {
     local result=$1
     os=$(uname)
@@ -135,10 +140,28 @@ function command_connect {
             show_status_bar
         }
         while true; do
-            output=$(ncat --recv-only $1 $2 2>&1 > /tmp/mp3)
+            proto="SHIT 1\nshit_on_me\n\n"
+            state="start"
+            while [ $state != "finished" ]; do
+                if [ $state == "start" ]; then
+                    echo -e $proto
+                    state="streaming"
+                elif [ $state == "streaming" ]; then
+                    size=$(head -n 1 /tmp/mp3)
+                    size=$(( $size + $( echo $size | wc -c ) ))
+                    if [ $size -eq $(wc -c < /tmp/mp3) ]; then
+                        state="finished"
+                        tail -n +2 /tmp/mp3 > /tmp/newmp3
+                        mv /tmp/newmp3 /tmp/mp3
+                    else
+                        sleep 1
+                    fi
+                fi
+            done | ncat $1 $2 2>&1 > /tmp/mp3
+
             err=$?
             if [ $err -ne 0 ]; then
-                update_status_bar "Connection failure ($output), retrying in 5 seconds..."
+                update_status_bar "Connection failure, retrying in 5 seconds..."
                 sleep 5 &
                 wait $!
             else
@@ -149,22 +172,38 @@ function command_connect {
             fi
         done
     ) &
-
     stream_pid=$!
+
     shit_server=$1
     shit_port=$2
+
+    rm -f /tmp/shit.fifo.in
+    rm -f /tmp/shit.fifo.out
+    mkfifo /tmp/shit.fifo.in
+    mkfifo /tmp/shit.fifo.out
+    (
+        while true; do
+            cat /tmp/shit.fifo.in;
+        done | ncat $1 $2 > /tmp/shit.fifo.out
+    ) &
+    connection_pid=$!
+    echo 'SHIT 1\n' > /tmp/shit.fifo.in
 }
 
 function command_disconnect {
     helptext="Disconnect from current stream of shit"
     helptext="Usage: disconnect"
 
+    v "Disconnecting"
     if [ $stream_pid -ne 0 ]; then
+        v "Killing streaming process $stream_pid"
         kill $stream_pid
         stream_pid=0
         shit_server=""
         shit_port=""
         rm -f /tmp/toilet
+        rm -f /tmp/shit.fifo.in
+        rm -f /tmp/shit.fifo.out
     else
         echo Not currently streaming
     fi
@@ -214,6 +253,17 @@ function command_shit {
     fi
 
     shit_the_bed
+}
+
+function command_hi {
+    helptext="Test connection"
+
+    echo -e 'hi\n' > /tmp/shit.fifo.in
+    read line < /tmp/shit.fifo.out
+    while [ -n "$line" ]; do
+        echo $line
+        read line < /tmp/shit.fifo.out
+    done
 }
 
 function command_help {
