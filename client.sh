@@ -129,13 +129,6 @@ function command_connect {
     fi
 
     (
-        function cleanup {
-            jobs -p | xargs kill
-            exit
-        }
-
-        trap cleanup SIGINT SIGTERM SIGHUP
-
         function update_status_bar {
             status_connection=$1
             echo "status_connection=\"$1\"" > /tmp/toilet
