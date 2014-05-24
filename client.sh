@@ -203,9 +203,13 @@ function command_connect {
             done
         }
         trap cleanup SIGINT SIGTERM SIGHUP
-        while true; do
-            cat /tmp/shit.fifo.in | tee | grep '^DONE$' && exit
-        done | ncat $1 $2 > /tmp/shit.fifo.out
+
+        (
+            exec 3>&1
+            while true; do
+                cat /tmp/shit.fifo.in | tee /dev/fd/3 | grep '^DONE$' && exit
+            done
+        ) | ncat $1 $2 > /tmp/shit.fifo.out
     ) &
     connection_pid=$!
     echo 'SHIT 1\n' > /tmp/shit.fifo.in
