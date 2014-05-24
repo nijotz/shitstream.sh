@@ -296,10 +296,10 @@ function command_shit {
     shit_the_bed
 }
 
-function command_hi {
+function command_ping {
     helptext="Test connection"
 
-    echo -e 'hi\n' > /tmp/shit.fifo.in
+    echo -e 'ping\n' > /tmp/shit.fifo.in
     read line < /tmp/shit.fifo.out
     while [ -n "$line" ]; do
         echo $line

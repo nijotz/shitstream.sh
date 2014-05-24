@@ -81,8 +81,9 @@ function connection_handler {
     done
 }
 
-function command_hi {
-    echo hello >&3
+function command_ping {
+    v "PONGing a PING"
+    echo pong >&3
     while [[ $# > 0 ]] ; do
         echo $1 >&3
         shift
