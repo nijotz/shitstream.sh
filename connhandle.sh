@@ -12,12 +12,14 @@ STANDBY="trumpet.mp3"
 trap "rm -f $LOCKFILE; exit" INT TERM EXIT
 
 function download_youtube_mp3 {
+    # I put underscores everywhere so they wouldn't clash with vars in the
+    # calling function
 
-    local url=$1
-    local returnvar=$2
+    local _url=$1
+    local _returnvar=$2
 
     v "Connecting to URL"
-    if ! curl -I $url >/dev/null 2>&1; then
+    if ! curl -I $_url >/dev/null 2>&1; then
         v "Couldn't connect"
         return 1
     fi
@@ -28,26 +30,26 @@ function download_youtube_mp3 {
     # tee below.  I want to capture the output of the youtube-dl command,
     # but also log it to the terminal
     exec 4>&1
-    local output=$(youtube-dl --keep --extract-audio --audio-format mp3 \
-        --no-post-overwrites $url | tee >(cat - >&4))
+    local _output=$(youtube-dl --keep --extract-audio --audio-format mp3 \
+        --no-post-overwrites $_url | tee >(cat - >&4))
 
-    local alreadyexists=$(echo "$output" | grep -c 'exists, skipping')
-    if [ $alreadyexists -gt 0 ]; then
+    local _alreadyexists=$(echo "$_output" | grep -c 'exists, skipping')
+    if [ $_alreadyexists -gt 0 ]; then
         v "MP3 exists, skipping conversion"
-        local mp3namestart='.*Post-process file \(.*\) exists, skipping'
-        local mp3=$(echo "$output" | grep "$mp3namestart" | sed "s/$mp3namestart/\1/")
+        local _mp3namestart='.*Post-process file \(.*\) exists, skipping'
+        local _mp3=$(echo "$_output" | grep "$_mp3namestart" | sed "s/$_mp3namestart/\1/")
     else
-        local mp3namestart='^.ffmpeg. Destination: '
-        local mp3=$(echo "$output" | grep "$mp3namestart" | sed "s/$mp3namestart//")
+        local _mp3namestart='^.ffmpeg. Destination: '
+        local _mp3=$(echo "$_output" | grep "$_mp3namestart" | sed "s/$_mp3namestart//")
     fi
 
-    # eval bad. $'...' good.
-    eval $returnvar=$'$mp3'
-
-    if [ -z "$mp3" ]; then
+    if [ -z "$_mp3" ]; then
         v "mp3 name could not be found!"
         return 1
     fi
+
+    # eval bad. $'...' good.
+    eval $_returnvar=$'$_mp3'
 }
 
 function connection_handler {
