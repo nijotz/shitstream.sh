@@ -22,7 +22,6 @@ Example:
     $ shit> help
 
 TODO:
-* Consolidate client files into ~/.shitstream
 * Have option to connnect, but not play mp3s, for when another client is
   connected to speakers and you just want to add to the queue from another
   client

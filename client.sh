@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# Audio programs to use for playing mp3s
-audio_programs_Darwin=(mpg123 afplay)
-audio_programs_Linux=(mpg123 mplayer ffplay cvlc)
+SHIT_DIR=~/.shitstream
+SHIT_PLAYER=""
 
 # Store pid of streaming process
 stream_pid=0
@@ -26,16 +25,24 @@ function v {
 
 function get_audio_program {
     local result=$1
+
+    if [ -n "$SHIT_PLAYER" ]; then
+        eval $reult=$'$SHIT_PLAYER'
+        return
+    fi
+
+    # Audio programs to use for playing mp3s
+    audio_programs_Darwin=(mpg123 afplay)
+    audio_programs_Linux=(mpg123 mplayer ffplay cvlc)
+
     os=$(uname)
-    #v OS is $os
     programs_var=audio_programs_$os
     programs=${!programs_var}
     for _program in ${programs[@]}; do
         whichprogram=$(which $_program)
         extstatus=$?
         if [ ! $exitstatus ]; then
-            #v Using program \'$whichprogram\'
-            eval $result="'$whichprogram'"
+            eval $result=$'$whichprogram'
             return
         fi
     done
@@ -43,10 +50,10 @@ function get_audio_program {
 
 function prompt {
     while true; do
-        # TODO: Improve how stream status is passed from the child process
-        # The streaming subprocess puts its status strings in /tmp/toilet.
-        # Load it for the status bar.
-        test -f /tmp/toilet && source /tmp/toilet
+        # TODO: Improve how stream status is passed from the child process The
+        # streaming subprocess puts its status strings in toilet.  Load it for
+        # the status bar.
+        test -f ${SHIT_DIR}/toilet && source ${SHIT_DIR}/toilet
         show_status_bar
 
         # Read input with readline support (-e), ctrl-d will quit
@@ -84,9 +91,36 @@ function show_status_bar {
     tput rc  # Restore cursor position
 }
 
+function usage {
+cat << EOF
+usage: $0 options
+
+Dive into the shit stream (tm)
+
+OPTIONS:
+   -h      Help
+   -d      Shit directory
+
+$0 -p 5678 -r 0.5 -s 10 -v
+EOF
+}
+
 function begin {
-    command_loadcfg
-    history -r ~/.shit_history  # Load history file for readline
+    while getopts "h:d" OPTION
+    do
+      case $OPTION in
+        h)
+          usage
+          exit
+          ;;
+        d)
+          SHIT_DIR=$OPTARG
+          ;;
+      esac
+    done
+
+    command_loadcfg ${SHIT_DIR}/config
+    history -r ${SHIT_DIR}/history  # Load history file for readline
     tput smcup  # Save terminal screen
     tput clear  # Clear screen
     tput cup `tput lines` 0  # Move cursor to last line, first column
@@ -103,8 +137,8 @@ function command_quit {
     pkill -P $$
 
     command_savecfg
-    history -w ~/.shit_history  # Write history file
     tput rmcup  # Restore original terminal output
+    history -w ${SHIT_DIR}/history  # Write history file
     exit
 }
 trap command_quit SIGINT SIGTERM SIGHUP EXIT
@@ -112,16 +146,17 @@ trap command_quit SIGINT SIGTERM SIGHUP EXIT
 function command_loadcfg {
     helptext="Load configuration values from a file"
     helptext="Usage: loadcfg [cfgfile]"
-    helptext="  cfgfile	Config file to load (default: ~/.shitstream)"
-    source ${1:-~/.shitstream}
+    helptext="  cfgfile	Config file to load (default: ~/.shitstream/config)"
+    source ${1:-${SHIT_DIR}/config}
 }
 
 function command_savecfg {
     helptext="Save configuration values to a file"
     helptext="Usage: savecfg [cfgfile]"
-    helptext="  cfgfile	Config file to load (default: ~/.shitstream)"
+    helptext="  cfgfile	Config file to load (default: ~/.shitstream/config)"
 
-    set | grep ^SHIT_ > ~/.shitstream
+    mkdir -p ${SHIT_DIR}
+    set | grep ^SHIT_ > ${SHIT_DIR}/config
 }
 
 function command_connect {
@@ -146,7 +181,7 @@ function command_connect {
 
         function update_status_bar {
             status_connection=$1
-            echo "status_connection=\"$1\"" > /tmp/toilet
+            echo "status_connection=\"$1\"" > ${SHIT_DIR}/toilet
             show_status_bar
         }
 
@@ -159,17 +194,17 @@ function command_connect {
                     echo -e $proto
                     state="streaming"
                 elif [ $state == "streaming" ]; then
-                    size=$(head -n 1 /tmp/mp3)
+                    size=$(head -n 1 ${SHIT_DIR}/mp3)
                     size=$(( $size + $( echo $size | wc -c ) ))
-                    if [ $size -eq $(wc -c < /tmp/mp3) ]; then
+                    if [ $size -eq $(wc -c < ${SHIT_DIR}/mp3) ]; then
                         state="finished"
-                        tail -n +2 /tmp/mp3 > /tmp/newmp3
-                        mv /tmp/newmp3 /tmp/mp3
+                        tail -n +2 ${SHIT_DIR}/mp3 > ${SHIT_DIR}/newmp3
+                        mv ${SHIT_DIR}/newmp3 ${SHIT_DIR}/mp3
                     else
                         sleep 1
                     fi
                 fi
-            done | ncat $1 $2 2>&1 > /tmp/mp3
+            done | ncat $1 $2 2>&1 > ${SHIT_DIR}/mp3
 
             err=$?
             if [ $err -ne 0 ]; then
@@ -179,7 +214,7 @@ function command_connect {
             else
                 update_status_bar "Connected to $1 $2"
                 get_audio_program program
-                $program /tmp/mp3 >/dev/null 2>&1 &
+                $program ${SHIT_DIR}/mp3 >/dev/null 2>&1 &
                 wait $!
                 err=$?
             fi
@@ -190,10 +225,10 @@ function command_connect {
     shit_server=$1
     shit_port=$2
 
-    rm -f /tmp/shit.fifo.in
-    rm -f /tmp/shit.fifo.out
-    mkfifo /tmp/shit.fifo.in
-    mkfifo /tmp/shit.fifo.out
+    rm -f ${SHIT_DIR}/shit.fifo.in
+    rm -f ${SHIT_DIR}/shit.fifo.out
+    mkfifo ${SHIT_DIR}/shit.fifo.in
+    mkfifo ${SHIT_DIR}/shit.fifo.out
     (
         function cleanup {
             v "Cleaning up connection process"
@@ -208,12 +243,12 @@ function command_connect {
         (
             exec 3>&1
             while true; do
-                cat /tmp/shit.fifo.in | tee /dev/fd/3 | grep '^DONE$' && exit
+                cat ${SHIT_DIR}/shit.fifo.in | tee /dev/fd/3 | grep '^DONE$' && exit
             done
-        ) | ncat $1 $2 > /tmp/shit.fifo.out
+        ) | ncat $1 $2 > ${SHIT_DIR}/shit.fifo.out
     ) &
     connection_pid=$!
-    echo 'SHIT 1\n' > /tmp/shit.fifo.in
+    echo 'SHIT 1\n' > ${SHIT_DIR}/shit.fifo.in
 }
 
 function command_disconnect {
@@ -227,18 +262,18 @@ function command_disconnect {
 
         v "Killing connection process $connection_pid"
         kill $connection_pid
-        echo DONE > /tmp/shit.fifo.in
+        echo DONE > ${SHIT_DIR}/shit.fifo.in
 
-        v "Cleaning up tmp files"
+        v "Cleaning up temp files"
 
         stream_pid=0
         connection_pid=0
         shit_server=""
         shit_port=""
 
-        rm -f /tmp/toilet
-        rm -f /tmp/shit.fifo.in
-        rm -f /tmp/shit.fifo.out
+        rm -f ${SHIT_DIR}/toilet
+        rm -f ${SHIT_DIR}/shit.fifo.in
+        rm -f ${SHIT_DIR}/shit.fifo.out
     else
         echo Not currently streaming
     fi
@@ -282,14 +317,14 @@ function command_shit {
     fi
 
     if [ $1 == -u ]; then
-        echo "shit_url" > /tmp/shit.fifo.in
-        echo "$2" > /tmp/shit.fifo.in
-        echo > /tmp/shit.fifo.in
+        echo "shit_url" > ${SHIT_DIR}/shit.fifo.in
+        echo "$2" > ${SHIT_DIR}/shit.fifo.in
+        echo > ${SHIT_DIR}/shit.fifo.in
 
-        read line < /tmp/shit.fifo.out
+        read line < ${SHIT_DIR}/shit.fifo.out
         while [ -n "$line" ]; do
             echo $line
-            read line < /tmp/shit.fifo.out
+            read line < ${SHIT_DIR}/shit.fifo.out
         done
         return
     fi
@@ -300,11 +335,11 @@ function command_shit {
 function command_ping {
     helptext="Test connection"
 
-    echo -e 'ping\n' > /tmp/shit.fifo.in
-    read line < /tmp/shit.fifo.out
+    echo -e 'ping\n' > ${SHIT_DIR}/shit.fifo.in
+    read line < ${SHIT_DIR}/shit.fifo.out
     while [ -n "$line" ]; do
         echo $line
-        read line < /tmp/shit.fifo.out
+        read line < ${SHIT_DIR}/shit.fifo.out
     done
 }
 
