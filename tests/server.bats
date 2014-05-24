@@ -20,7 +20,7 @@ teardown() {
     touch /tmp/testing
     state="start"
     sleeptime=0
-    ncat 0.0.0.0 8675 > /tmp/testing < <(
+    (
         while [ $state != "finished" ]; do
             if [ $state == "start" ]; then
                 echo "SHIT 1"
@@ -40,7 +40,7 @@ teardown() {
                 fi
             fi
         done 
-    )
+    ) > >(ncat 0.0.0.0 8675 > /tmp/testing)
 
     [ "$(cat /tmp/testing)" == "pong" ]
 }
