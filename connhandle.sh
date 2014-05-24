@@ -56,12 +56,15 @@ function connection_handler {
 
     re='SHIT [0-9][0-9]*'
     if [[ ! $apiversion =~ $re ]]; then
+        v "Protocol error: expected SHIT [0-9]"
         echo "Protocol error: expected SHIT [0-9]" >&3
         exit 1
     fi
 
+
     # TODO: load api files
 
+    v "Handling command"
     while true; do
         read line; command=$line
 
@@ -74,8 +77,10 @@ function connection_handler {
         done
 
         if ! output=$(declare -f | grep "command_${command} ()"); then
+            v "Invalid command: $command"
             echo Invalid command: $command >&3
         else
+            v "Running command: $command"
             command_$command "${options[@]}"
         fi
     done
@@ -203,4 +208,5 @@ function command_shit_on_me {
     stream_song $STANDBY
 }
 
+v "Handling connection"
 connection_handler
