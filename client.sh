@@ -281,8 +281,15 @@ function command_shit {
     fi
 
     if [ $1 == -u ]; then
-        echo $2 | ncat $shit_server 8675 # TODO: $shit_port
-        echo "Sent URL to stream"
+        echo "shit_url" > /tmp/shit.fifo.in
+        echo "$2" > /tmp/shit.fifo.in
+        echo > /tmp/shit.fifo.in
+
+        read line < /tmp/shit.fifo.out
+        while [ -n "$line" ]; do
+            echo $line
+            read line < /tmp/shit.fifo.out
+        done
         return
     fi
 

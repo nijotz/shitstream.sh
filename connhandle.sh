@@ -103,10 +103,9 @@ function command_shit_url {
         download_youtube_mp3 $url mp3
         popd > /dev/null
         exitstatus=$?
-        mp3=$newmp3
 
         if [ $exitstatus -ne 0 ]; then
-            echo "Could not download mp3" >&3
+            echo -e "Could not download mp3\n" >&3
             return 1
         fi
 
@@ -115,9 +114,11 @@ function command_shit_url {
         ln -s "in/$mp3" $(date +%s.%N).mp3
         popd > /dev/null
     else
-        echo "Youtube URLs only" >&3
+        echo -e "Youtube URLs only\n" >&3
         return 1
     fi
+
+    echo -e "Added mp3\n" >&3
 }
 
 function command_shit_mp3 {
