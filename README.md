@@ -29,3 +29,8 @@ TODO:
 * Keep old mp3s around for streaming when nothing is queued
 * Keep mp3s on client for cache or adding to personal music collection
 * Client should use nc/netcat/ncat, whatever is available
+* Separate server log messages by client
+* SSL
+* Users (song added by userx)
+* Passwords and/or stream passwords
+* Named mp3s

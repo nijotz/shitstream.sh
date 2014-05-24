@@ -41,7 +41,8 @@ function download_youtube_mp3 {
         local mp3=$(echo "$output" | grep "$mp3namestart" | sed "s/$mp3namestart//")
     fi
 
-    eval $returnvar="'$mp3'"
+    # eval bad. $'...' good.
+    eval $returnvar=$'$mp3'
 
     if [ -z "$mp3" ]; then
         v "mp3 name could not be found!"
