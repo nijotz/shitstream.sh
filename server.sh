@@ -5,9 +5,10 @@ function handle_sigint {
     do
         echo killing $proc
         kill $proc
+        wait $proc
     done
 }
 
-trap handle_sigint SIGINT
+trap handle_sigint SIGINT SIGTERM EXIT
 ncat -vlk -c 'bash connhandle.sh' 0.0.0.0 8675 &
 wait %1
