@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Audio programs to use for playing mp3s
-audio_programs_Darwin=(afplay)
+audio_programs_Darwin=(mpg123 afplay)
 audio_programs_Linux=(mpg123 mplayer ffplay cvlc)
 
 # Store pid of streaming process
@@ -178,7 +178,7 @@ function command_connect {
             else
                 update_status_bar "Connected to $1 $2"
                 get_audio_program program
-                $program /tmp/mp3 &
+                $program /tmp/mp3 >/dev/null 2>&1 &
                 wait $!
                 err=$?
             fi
