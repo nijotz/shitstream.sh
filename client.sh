@@ -104,7 +104,6 @@ function command_quit {
     command_savecfg
     history -w ~/.shit_history  # Write history file
     tput rmcup  # Restore original terminal output
-    rm -f /tmp/toilet
     exit
 }
 trap command_quit SIGINT SIGTERM SIGHUP EXIT
@@ -134,12 +133,24 @@ function command_connect {
     fi
 
     (
+        function cleanup {
+            v "Cleaning up streaming process"
+            for proc in $(jobs -p); do
+                v "Killing $proc"
+                kill $proc
+                wait $proc
+            done
+        }
+        trap cleanup SIGINT SIGTERM SIGHUP
+
         function update_status_bar {
             status_connection=$1
             echo "status_connection=\"$1\"" > /tmp/toilet
             show_status_bar
         }
-        while true; do
+
+        err=0
+        while [ "$err" -eq 0 ]; do
             proto="SHIT 1\nshit_on_me\n\n"
             state="start"
             while [ $state != "finished" ]; do
@@ -169,6 +180,7 @@ function command_connect {
                 get_audio_program program
                 $program /tmp/mp3 &
                 wait $!
+                err=$?
             fi
         done
     ) &
@@ -182,8 +194,17 @@ function command_connect {
     mkfifo /tmp/shit.fifo.in
     mkfifo /tmp/shit.fifo.out
     (
+        function cleanup {
+            v "Cleaning up connection process"
+            for proc in $(jobs -p); do
+                v "Killing $proc"
+                kill $proc
+                wait $proc
+            done
+        }
+        trap cleanup SIGINT SIGTERM SIGHUP
         while true; do
-            cat /tmp/shit.fifo.in;
+            cat /tmp/shit.fifo.in | tee | grep '^DONE$' && exit
         done | ncat $1 $2 > /tmp/shit.fifo.out
     ) &
     connection_pid=$!
@@ -198,9 +219,18 @@ function command_disconnect {
     if [ $stream_pid -ne 0 ]; then
         v "Killing streaming process $stream_pid"
         kill $stream_pid
+
+        v "Killing connection process $connection_pid"
+        kill $connection_pid
+        echo DONE > /tmp/shit.fifo.in
+
+        v "Cleaning up tmp files"
+
         stream_pid=0
+        connection_pid=0
         shit_server=""
         shit_port=""
+
         rm -f /tmp/toilet
         rm -f /tmp/shit.fifo.in
         rm -f /tmp/shit.fifo.out
