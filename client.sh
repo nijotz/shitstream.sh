@@ -88,6 +88,7 @@ function begin {
     command_loadcfg
     history -r ~/.shit_history  # Load history file for readline
     tput smcup  # Save terminal screen
+    tput clear  # Clear screen
     tput cup `tput lines` 0  # Move cursor to last line, first column
     prompt
 }
