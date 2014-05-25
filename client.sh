@@ -119,6 +119,7 @@ function begin {
       esac
     done
 
+    mkdir -p ${SHIT_DIR}
     command_loadcfg ${SHIT_DIR}/config
     history -r ${SHIT_DIR}/history  # Load history file for readline
     tput smcup  # Save terminal screen
@@ -159,12 +160,17 @@ function command_savecfg {
     set | grep ^SHIT_ > ${SHIT_DIR}/config
 }
 
-function command_connect {
-    helptext="Connect to a stream of shit"
-    helptext="Usage: connect <server> <port>"
+function command_play {
+    helptext="Play some shit that's on the server"
+    helptext="Usage: play"
 
     if [ $stream_pid -ne 0 ]; then
         echo "Currently streaming, disconnect first"
+        return
+    fi
+
+    if [ $connection_pid -eq 0 ]; then
+        echo "Not connected"
         return
     fi
 
@@ -204,7 +210,7 @@ function command_connect {
                         sleep 1
                     fi
                 fi
-            done | ncat $1 $2 2>&1 > ${SHIT_DIR}/mp3
+            done | ncat $shit_server $shit_port 2>&1 > ${SHIT_DIR}/mp3
 
             err=$?
             if [ $err -ne 0 ]; then
@@ -221,6 +227,11 @@ function command_connect {
         done
     ) &
     stream_pid=$!
+}
+
+function command_connect {
+    helptext="Connect to a stream of shit"
+    helptext="Usage: connect <server> <port>"
 
     shit_server=$1
     shit_port=$2
