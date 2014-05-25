@@ -169,11 +169,6 @@ function command_play {
         return
     fi
 
-    if [ $connection_pid -eq 0 ]; then
-        echo "Not connected"
-        return
-    fi
-
     (
         function cleanup {
             v "Cleaning up streaming process"
@@ -218,7 +213,7 @@ function command_play {
                 sleep 5 &
                 wait $!
             else
-                update_status_bar "Connected to $shit_server $shit_port"
+                update_status_bar "Playing from $shit_server $shit_port"
                 get_audio_program program
                 $program ${SHIT_DIR}/mp3 >/dev/null 2>&1 &
                 wait $!
@@ -236,30 +231,9 @@ function command_connect {
     shit_server=$1
     shit_port=$2
 
-    rm -f ${SHIT_DIR}/shit.fifo.in
-    rm -f ${SHIT_DIR}/shit.fifo.out
-    mkfifo ${SHIT_DIR}/shit.fifo.in
-    mkfifo ${SHIT_DIR}/shit.fifo.out
-    (
-        function cleanup {
-            v "Cleaning up connection process"
-            for proc in $(jobs -p); do
-                v "Killing $proc"
-                kill $proc
-                wait $proc
-            done
-        }
-        trap cleanup SIGINT SIGTERM SIGHUP
-
-        (
-            exec 3>&1
-            while true; do
-                cat ${SHIT_DIR}/shit.fifo.in | tee /dev/fd/3 | grep '^DONE$' && exit
-            done
-        ) | ncat $1 $2 > ${SHIT_DIR}/shit.fifo.out
-    ) &
-    connection_pid=$!
-    echo 'SHIT 1\n' > ${SHIT_DIR}/shit.fifo.in
+    exec 3<> /dev/tcp/$shit_server/$shit_port
+    echo -e 'SHIT 1\n' >&3
+    status_connection="Connected to $shit_server $shit_port"
 }
 
 function command_disconnect {
@@ -267,24 +241,15 @@ function command_disconnect {
     helptext="Usage: disconnect"
 
     v "Disconnecting"
+
     if [ $stream_pid -ne 0 ]; then
         v "Killing streaming process $stream_pid"
         kill $stream_pid
 
-        v "Killing connection process $connection_pid"
-        kill $connection_pid
-        echo DONE > ${SHIT_DIR}/shit.fifo.in
-
-        v "Cleaning up temp files"
-
         stream_pid=0
-        connection_pid=0
         shit_server=""
         shit_port=""
-
-        rm -f ${SHIT_DIR}/toilet
-        rm -f ${SHIT_DIR}/shit.fifo.in
-        rm -f ${SHIT_DIR}/shit.fifo.out
+        exec 3<&-
     else
         echo Not currently streaming
     fi
