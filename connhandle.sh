@@ -82,6 +82,7 @@ function connection_handler {
         if ! output=$(declare -f | grep "command_${command} ()"); then
             v "Invalid command: $command"
             echo Invalid command: $command >&3
+            echo >&3
         else
             v "Running command: $command"
             command_$command "${options[@]}"

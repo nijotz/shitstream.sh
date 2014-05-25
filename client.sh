@@ -164,64 +164,58 @@ function command_play {
     helptext="Play some shit that's on the server"
     helptext="Usage: play"
 
+    if [ -z "$shit_server" ]; then
+        echo "You need to connect first"
+        return
+    fi
+
     if [ $stream_pid -ne 0 ]; then
         echo "Currently streaming, disconnect first"
         return
     fi
 
     (
-        function cleanup {
-            v "Cleaning up streaming process"
-            for proc in $(jobs -p); do
-                v "Killing $proc"
-                kill $proc
-                wait $proc
-            done
-        }
-        trap cleanup SIGINT SIGTERM SIGHUP
-
         function update_status_bar {
             status_connection=$1
             echo "status_connection=\"$1\"" > ${SHIT_DIR}/toilet
             show_status_bar
         }
 
-        err=0
-        while [ "$err" -eq 0 ]; do
-            proto="SHIT 1\nshit_on_me\n\n"
-            state="start"
-            while [ $state != "finished" ]; do
-                if [ $state == "start" ]; then
-                    echo -e $proto
-                    state="streaming"
-                elif [ $state == "streaming" ]; then
-                    size=$(head -n 1 ${SHIT_DIR}/mp3)
-                    size=$(( $size + $( echo $size | wc -c ) ))
-                    if [ $size -eq $(wc -c < ${SHIT_DIR}/mp3) ]; then
-                        state="finished"
-                        tail -n +2 ${SHIT_DIR}/mp3 > ${SHIT_DIR}/newmp3
-                        mv ${SHIT_DIR}/newmp3 ${SHIT_DIR}/mp3
-                    else
-                        sleep 1
-                    fi
-                fi
-            done | ncat $shit_server $shit_port 2>&1 > ${SHIT_DIR}/mp3
+        function cleanup {
+            for job in $(jobs -p); do
+                kill $job
+                wait $job
+            done
+        }
+        trap cleanup SIGINT SIGTERM SIGHUP EXIT
 
+        err=0
+        while [ $err -eq 0 ]; do
+            exec 4<> /dev/tcp/$shit_server/$shit_port
+            echo -e "SHIT 1\nshit_on_me\n" >&4
+            read length <&4
+            dd bs=1 count=$length <&4 > ${SHIT_DIR}/mp3 2>/dev/null
+            exec 4<&-
+            update_status_bar "Playing from $shit_server $shit_port"
+            get_audio_program program
+            $program ${SHIT_DIR}/mp3 >/dev/null 2>&1 &
+            wait $!
             err=$?
-            if [ $err -ne 0 ]; then
-                update_status_bar "Connection failure, retrying in 5 seconds..."
-                sleep 5 &
-                wait $!
-            else
-                update_status_bar "Playing from $shit_server $shit_port"
-                get_audio_program program
-                $program ${SHIT_DIR}/mp3 >/dev/null 2>&1 &
-                wait $!
-                err=$?
-            fi
         done
     ) &
     stream_pid=$!
+}
+
+function command_stop {
+    helptext="Stop playing the shit coming from the server"
+    helptext="Usage: stop"
+
+    if [ $stream_pid -ne 0 ]; then
+        kill $stream_pid
+        wait $stream_pid
+        stream_pid=0
+        status_connection="Connected to $shit_server $shit_port"
+    fi
 }
 
 function command_connect {
@@ -232,7 +226,7 @@ function command_connect {
     shit_port=$2
 
     exec 3<> /dev/tcp/$shit_server/$shit_port
-    echo -e 'SHIT 1\n' >&3
+    echo -e 'SHIT 1' >&3
     status_connection="Connected to $shit_server $shit_port"
 }
 
@@ -243,16 +237,12 @@ function command_disconnect {
     v "Disconnecting"
 
     if [ $stream_pid -ne 0 ]; then
-        v "Killing streaming process $stream_pid"
-        kill $stream_pid
-
-        stream_pid=0
-        shit_server=""
-        shit_port=""
-        exec 3<&-
-    else
-        echo Not currently streaming
+        command_stop
     fi
+
+    shit_server=""
+    shit_port=""
+    exec 3<&-
 
     status_connection="Not connected"
 }
@@ -274,7 +264,7 @@ function command_shit {
     if [ $# -ne 2 ]; then shit_the_bed; return; fi
 
     # Can only upload if connected
-    if [ $connection_pid -eq 0 ]; then
+    if [ -z "$shit_server" ]; then
         echo "Not connected"
         return
     fi
@@ -287,20 +277,22 @@ function command_shit {
             return
         fi
 
-        cat $mp3 | ncat $shit_server 8675 # TODO: fix hard-coded port $shit_port
+        echo "shit_mp3" >&3
+        echo >&3
+        cat $mp3 >&3
         echo "Sent MP3 to stream"
         return
     fi
 
     if [ $1 == -u ]; then
-        echo "shit_url" > ${SHIT_DIR}/shit.fifo.in
-        echo "$2" > ${SHIT_DIR}/shit.fifo.in
-        echo > ${SHIT_DIR}/shit.fifo.in
+        echo "shit_url" >&3
+        echo "$2" >&3
+        echo >&3
 
-        read line < ${SHIT_DIR}/shit.fifo.out
+        read line <&3
         while [ -n "$line" ]; do
             echo $line
-            read line < ${SHIT_DIR}/shit.fifo.out
+            read line <&3
         done
         return
     fi
@@ -311,11 +303,11 @@ function command_shit {
 function command_ping {
     helptext="Test connection"
 
-    echo -e 'ping\n' > ${SHIT_DIR}/shit.fifo.in
-    read line < ${SHIT_DIR}/shit.fifo.out
+    echo -e 'ping\n' >&3
+    read line <&3
     while [ -n "$line" ]; do
         echo $line
-        read line < ${SHIT_DIR}/shit.fifo.out
+        read line <&3
     done
 }
 
