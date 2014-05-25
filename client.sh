@@ -218,7 +218,7 @@ function command_play {
                 sleep 5 &
                 wait $!
             else
-                update_status_bar "Connected to $1 $2"
+                update_status_bar "Connected to $shit_server $shit_port"
                 get_audio_program program
                 $program ${SHIT_DIR}/mp3 >/dev/null 2>&1 &
                 wait $!
@@ -309,8 +309,8 @@ function command_shit {
     if [ $# -ne 2 ]; then shit_the_bed; return; fi
 
     # Can only upload if connected
-    if [ $stream_pid -eq 0 ]; then
-        echo "Not connected, you gotta be in the stream with everyone else to shit in it"
+    if [ $connection_pid -eq 0 ]; then
+        echo "Not connected"
         return
     fi
 
