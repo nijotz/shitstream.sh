@@ -12,5 +12,5 @@ function handle_sigint {
 }
 
 trap handle_sigint SIGINT SIGTERM EXIT
-ncat -vlk -c 'bash connhandle.sh' 0.0.0.0 8675 &
+ncat -vlk -c 'bash connhandle.sh' 0.0.0.0 ${1:-8675} &
 wait %1
