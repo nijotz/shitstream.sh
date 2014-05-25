@@ -7,6 +7,8 @@ function handle_sigint {
         kill $proc
         wait $proc
     done
+
+    exit 0
 }
 
 trap handle_sigint SIGINT SIGTERM EXIT
