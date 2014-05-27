@@ -61,6 +61,7 @@ function prompt {
         test $? != 0 && command_quit
 
         handle_input $input
+        return $?
     done
 }
 
@@ -78,6 +79,7 @@ function handle_input {
         echo Invalid command: $command
     else
         command_$command $*
+        return $?
     fi
 }
 
@@ -222,19 +224,36 @@ function command_connect {
     helptext="Connect to a stream of shit"
     helptext="Usage: connect <server> <port>"
 
+    if [ -n "$shit_server" ]; then
+        command_disconnect
+    fi
+
+    echo "Connecting to $1:$2"
+    { exec 3<> /dev/tcp/$1/$2; } 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo 'Connection refused'
+        return 1
+    fi
+
     shit_server=$1
     shit_port=$2
 
-    exec 3<> /dev/tcp/$shit_server/$shit_port
     echo -e 'SHIT 1' >&3
+
     status_connection="Connected to $shit_server $shit_port"
+    echo "Connected to $1:$2"
 }
 
 function command_disconnect {
     helptext="Disconnect from current stream of shit"
     helptext="Usage: disconnect"
 
-    v "Disconnecting"
+    if [ -z "$shit_server" ]; then
+        echo "Not connected"
+        return 1
+    fi
+
+    v "Disconnecting from ${shit_server}:${shit_port}"
 
     if [ $stream_pid -ne 0 ]; then
         command_stop
