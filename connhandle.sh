@@ -100,6 +100,20 @@ function command_ping {
     echo >&3
 }
 
+function process_mp3 {
+    mp3=$1
+
+    v "Applying ReplayGain"
+    mp3gain -r -s i "${MP3DIR}/in/$mp3"
+
+    v "Linking mp3"
+    pushd ${MP3DIR} > /dev/null
+    ln -s "in/$mp3" $(date +%s.%N).mp3
+    popd > /dev/null
+
+    echo -e "Added mp3\n" >&3
+}
+
 function command_shit_url {
     url=$1
 
@@ -119,27 +133,20 @@ function command_shit_url {
             return 1
         fi
 
-        pushd ${MP3DIR} > /dev/null
-        v "Linking mp3"
-        ln -s "in/$mp3" $(date +%s.%N).mp3
-        popd > /dev/null
+        process_mp3 "$mp3"
     else
         echo -e "Youtube URLs only\n" >&3
         return 1
     fi
-
-    echo -e "Added mp3\n" >&3
 }
 
 function command_shit_mp3 {
     length=$1
     mp3=$(date +%s.%N).mp3
-    cd ${MP3DIR}/in
+    pushd ${MP3DIR}/in > /dev/null
     head -c $length > $mp3
-    cd ..
-    ln -s "in/$mp3" $(date +%s.%N).mp3
-    cd ..
-
+    popd > /dev/null
+    process_mp3 "$mp3"
     echo "mp3 received" >&3
 }
 
