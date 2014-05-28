@@ -183,6 +183,7 @@ function command_play {
         }
 
         function cleanup {
+            rm -f ${SHIT_DIR}/toilet
             for job in $(jobs -p); do
                 kill $job
                 wait $job
