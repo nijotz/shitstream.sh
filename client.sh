@@ -61,7 +61,6 @@ function prompt {
         test $? != 0 && command_quit
 
         handle_input $input
-        return $?
     done
 }
 
