@@ -153,8 +153,22 @@ function command_play {
     (
         function update_status_bar {
             status_connection=$1
+            status_current_mp3=$2
             echo "status_connection=\"$1\"" > ${SHIT_DIR}/toilet
+            echo "status_current_mp3=\"$2\"" > ${SHIT_DIR}/toilet
             show_status_bar
+        }
+
+        function identify_mp3 {
+            id3info=$(mpg123-id3dump $1 1>/dev/null 2>&1)
+            artist=$(echo -e "$id3info" | sed -nr 's/Artist: (.*)/\1/p')
+            track=$(echo -e "$id3info" | sed -nr 's/Title: (.*)/\1/p')
+
+            if [ -z "$artist" ] && [ -z "$track" ]; then
+                echo "Unidentified song"
+            else
+                echo $artist - $track
+            fi
         }
 
         function cleanup {
@@ -173,8 +187,7 @@ function command_play {
             read length <&4
             dd bs=1 count=$length <&4 > ${SHIT_DIR}/mp3 2>/dev/null
             exec 4<&-
-            update_status_bar "Playing from $shit_server $shit_port"
-            get_audio_program program
+            update_status_bar "Playing from $shit_server $shit_port" "$(identify_mp3 ${SHIT_DIR}/mp3)"
             mpg123 ${SHIT_DIR}/mp3 >/dev/null 2>&1 &
             wait $!
             err=$?
