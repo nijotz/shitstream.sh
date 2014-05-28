@@ -32,6 +32,18 @@ teardown() {
     output=$(for item in ${lines[*]}; do echo $item; done)
     output=$(echo $output |
         sed -e '/Connecting to 0.0.0.0:8676/,/Connection refused/!d')
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
+    [ -n "$output" ]
+}
+
+@test "Test client ping" {
+    function connection {
+        echo -e 'connect 0.0.0.0 8675\nping\n' | bash client.sh
+    }
+    run connection
+    output=$(for item in ${lines[*]}; do echo $item; done)
+    output=$(echo $output |
+        sed -e '/Connecting to 0.0.0.0:8675/,/pong/!d')
+    [ "$status" -eq 0 ]
     [ -n "$output" ]
 }
