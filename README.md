@@ -32,6 +32,9 @@ Example:
     ----
     $ bash client.sh
     $ shit> connect 0.0.0.0 8675
+    $ shit> shit -u https://www.youtube.com/watch?v=MKp30C3MwVk
+    $ Added mp3
+    $ shit> play
     ♫ ♪ ♩
     $ shit> help
 
