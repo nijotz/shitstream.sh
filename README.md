@@ -4,7 +4,7 @@ shitstream
 
 Prerequisites (client):
 * ncat (part of the nmap package usually)
-* mpg123 (or afplay [OSX], mplayer, ffplay, cvlc)
+* mpg123
 
 Prerequisites (server):
 * sox

@@ -8,7 +8,7 @@ stream_pid=0
 
 # Initialize status messages
 status_connection="Not connected"
-status_current_mp3="Not connected"
+status_current_mp3="Not streaming"
 
 # Used for setting text color/attributes
 bld=$(tput bold)
@@ -21,31 +21,6 @@ mgn=$(tput setaf 5)
 # For now just echo, will add verbosity options later
 function v {
     echo $*
-}
-
-function get_audio_program {
-    local result=$1
-
-    if [ -n "$SHIT_PLAYER" ]; then
-        eval $reult=$'$SHIT_PLAYER'
-        return
-    fi
-
-    # Audio programs to use for playing mp3s
-    audio_programs_Darwin=(mpg123 afplay)
-    audio_programs_Linux=(mpg123 mplayer ffplay cvlc)
-
-    os=$(uname)
-    programs_var=audio_programs_$os
-    programs=${!programs_var}
-    for _program in ${programs[@]}; do
-        whichprogram=$(which $_program)
-        extstatus=$?
-        if [ ! $exitstatus ]; then
-            eval $result=$'$whichprogram'
-            return
-        fi
-    done
 }
 
 function prompt {
@@ -200,7 +175,7 @@ function command_play {
             exec 4<&-
             update_status_bar "Playing from $shit_server $shit_port"
             get_audio_program program
-            $program ${SHIT_DIR}/mp3 >/dev/null 2>&1 &
+            mpg123 ${SHIT_DIR}/mp3 >/dev/null 2>&1 &
             wait $!
             err=$?
         done
