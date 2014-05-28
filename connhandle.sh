@@ -187,7 +187,7 @@ function command_shit_on_me {
     v "Date is: $current_time"
     if [ ! -z "$expires" ] && [ $expires -lt $current_time ]; then
         v "Expiring current song"
-        rm $current_mp3
+        rm -f "$current_mp3"
         cat "/dev/null" > $CURRENT
     fi
 
