@@ -8,7 +8,7 @@ exec 3>&1 1>&2
 
 source mp3base.sh
 CURRENT="current"
-STANDBY="trumpet.mp3"
+#STANDBY="trumpet.mp3"
 trap "rm -f $LOCKFILE; exit" INT TERM EXIT
 
 function download_youtube_mp3 {
@@ -17,6 +17,9 @@ function download_youtube_mp3 {
 
     local _url=$1
     local _returnvar=$2
+
+    mkdir -p "youtube"
+    pushd youtube > /dev/null
 
     v "Connecting to URL"
     if ! curl -I $_url >/dev/null 2>&1; then
@@ -42,6 +45,9 @@ function download_youtube_mp3 {
         local _mp3namestart='^.ffmpeg. Destination: '
         local _mp3=$(echo "$_output" | grep "$_mp3namestart" | sed "s/$_mp3namestart//")
     fi
+
+    popd > /dev/null
+    ln -sf "youtube/$_mp3" .
 
     if [ -z "$_mp3" ]; then
         v "mp3 name could not be found!"
@@ -164,8 +170,8 @@ function command_shit_on_me {
 
     function stream_song {
         rm $LOCKFILE
-        wc -c < $1 >&3
-        cat $1 >&3
+        wc -c < "$1" >&3
+        cat "$1" >&3
     }
 
     # See if there's a song currently targeted for streaming
@@ -188,7 +194,7 @@ function command_shit_on_me {
     # Stream the file if it exists
     if [ ! -z "$current_mp3" ] && [ -f "$current_mp3" ]; then
         v "Streaming current song"
-        stream_song $current_mp3
+        stream_song "$current_mp3"
         return
     fi
 
@@ -210,13 +216,29 @@ function command_shit_on_me {
         echo $(( $length + $current_time ))>> $CURRENT
 
         v "Streaming $file"
-        stream_song $file
+        stream_song "$file"
         return
     done
+    v "Couldn't find a queued mp3"
 
-    # Play the standby mp3 if there aren't any uploaded ones
-    v "Playing standby"
-    stream_song $STANDBY
+    # Play the standby mp3 if one is defined
+    if [ -n "$STANDBY" ]; then
+        v "Playing standby"
+        stream_song "$STANDBY"
+        return
+    fi
+
+    # Play a randomly uploaded mp3
+    v "Playing random mp3"
+    mp3=$(ls in | sort -R | tail -n 1)
+    if [ -n "$mp3" ]; then
+        v "Streaming in/$mp3"
+        stream_song "in/$mp3"
+        return
+    fi
+
+    v "Couldn't find an mp3"
+    return 1
 }
 
 v "Handling connection"
