@@ -9,6 +9,8 @@ Prerequisites (client):
 Prerequisites (server):
 * sox
 * curl
+* youtube-dl
+* mp3gain
 
 Example:
 
