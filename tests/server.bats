@@ -1,8 +1,7 @@
 #!/usr/bin/env bats
 
-server_pid=0
 setup() {
-    bash server.sh &
+    bash server.sh 8676 &
     echo $! > $BATS_TMPDIR/server.pid
     sleep 1
 }
@@ -14,9 +13,9 @@ teardown() {
 }
 
 @test "Test pinging server" {
-    exec 5<>/dev/tcp/0.0.0.0/8675
-    echo -e "SHIT 1\nping\n\n" >&5
-    read line <&5
-    exec 5<&-
+    exec 6<>/dev/tcp/0.0.0.0/8676
+    echo -e "SHIT 1\nping\n\n" >&6
+    read line <&6
+    exec 6<&-
     [ "$line" == "pong" ]
 }
