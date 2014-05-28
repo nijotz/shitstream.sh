@@ -3,7 +3,6 @@ shitstream
 ==========
 
 Prerequisites (client):
-* ncat (part of the nmap package usually)
 * mpg123
 
 Prerequisites (server):
