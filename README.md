@@ -45,4 +45,3 @@ TODO:
 * SSL
 * Users (song added by userx)
 * Passwords and/or stream passwords
-* Named mp3s
