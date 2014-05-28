@@ -10,6 +10,18 @@ Prerequisites (server):
 * curl
 * youtube-dl
 * mp3gain
+* beets
+
+Beets setup:
+    $ mkvirtualenv shitstream
+    $ pip install beets       # for auto-tagging mp3s
+    $ pip install pyacoustid  # for identifying mp3s by acoustic signature
+    $ vim ~/.config/beets/config.yaml
+    # Identify songs by acoustic signature with hints from the filename
+    plugins:
+        - chroma
+        - fromfilename
+    $ bash server.sh
 
 Example:
 

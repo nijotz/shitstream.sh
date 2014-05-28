@@ -112,6 +112,9 @@ function process_mp3 {
     v "Applying ReplayGain"
     mp3gain -r -s i "${MP3DIR}/in/$mp3"
 
+    v "Tagging mp3"
+    beet import -qsC "${MP3DIR}/in/$mp3"
+
     v "Linking mp3"
     pushd ${MP3DIR} > /dev/null
     ln -s "in/$mp3" $(date +%s.%N).mp3
