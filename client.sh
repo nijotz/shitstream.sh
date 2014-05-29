@@ -155,7 +155,7 @@ function command_play {
             status_connection=$1
             status_current_mp3=$2
             echo "status_connection=\"$1\"" > ${SHIT_DIR}/toilet
-            echo "status_current_mp3=\"$2\"" > ${SHIT_DIR}/toilet
+            echo "status_current_mp3=\"$2\"" >> ${SHIT_DIR}/toilet
             show_status_bar
         }
 
