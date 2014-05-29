@@ -11,6 +11,8 @@ CURRENT="current"
 #STANDBY="trumpet.mp3"
 trap "rm -f $LOCKFILE; exit" INT TERM EXIT
 
+
+# Makes assumptions about cwd
 function download_youtube_mp3 {
     # I put underscores everywhere so they wouldn't clash with vars in the
     # calling function
@@ -106,11 +108,15 @@ function command_ping {
     echo >&3
 }
 
+# Assumes given mp3 is in the "in" directory
 function process_mp3 {
     mp3=$1
 
     v "Applying ReplayGain"
-    mp3gain -r -s i "${MP3DIR}/in/$mp3"
+    # readlink -f is to resolve symlinks since mp3gain makes a temp file and
+    # overwrites original which unlinks the symlink and doesn't modify the
+    # original
+    mp3gain -r -s i "$(readlink -f "${MP3DIR}/in/$mp3")"
 
     v "Tagging mp3"
     beet import -qsC "${MP3DIR}/in/$mp3"
