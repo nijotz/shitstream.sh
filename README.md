@@ -21,6 +21,8 @@ Beets setup:
     plugins:
         - chroma
         - fromfilename
+    match:
+      strong_rec_thresh: 0.20
     $ bash server.sh
 
 Example:
