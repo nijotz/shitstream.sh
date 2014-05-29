@@ -160,7 +160,7 @@ function command_play {
         }
 
         function identify_mp3 {
-            id3info=$(mpg123-id3dump $1 1>/dev/null 2>&1)
+            id3info=$(mpg123-id3dump "$1" 2>&1)
             artist=$(echo -e "$id3info" | sed -nr 's/Artist: (.*)/\1/p')
             track=$(echo -e "$id3info" | sed -nr 's/Title: (.*)/\1/p')
 
