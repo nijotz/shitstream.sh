@@ -3,8 +3,8 @@
 SHIT_DIR=~/.shitstream
 SHIT_PLAYER=""
 
-# Store pid of streaming process
 stream_pid=0
+connection_pid=0
 
 # Initialize status messages
 status_connection="Not connected"
@@ -13,7 +13,9 @@ status_current_mp3="Not streaming"
 # Used for setting text color/attributes
 bld=$(tput bold)
 nrm=$(tput sgr0)
+red=$(tput setaf 1)
 grn=$(tput setaf 2)
+ylw=$(tput setaf 3)
 blu=$(tput setaf 4)
 mgn=$(tput setaf 5)
 
@@ -30,6 +32,7 @@ function prompt {
         # the status bar.
         test -f ${SHIT_DIR}/toilet && source ${SHIT_DIR}/toilet
         show_status_bar
+        tput cup $(tput lines) 0
 
         # Read input with readline support (-e), ctrl-d will quit
         read -e -p "shit> " input
@@ -37,6 +40,30 @@ function prompt {
 
         handle_input $input
     done
+}
+
+function print_text {
+    lines=$(tput lines)
+    last1=$(( $lines - 2 ))
+    last=$(( $lines - 1 ))
+    tput xoffc
+    tput sc
+    tput csr 1 $last1
+    tput cup $last1
+    echo $*
+    tput csr 0 $last
+    tput rc
+    tput xonc
+}
+
+function print_server_text {
+    output=$*
+    print_text "${blu}Server> ${output}${nrm}"
+}
+
+function print_client_text {
+    output=$*
+    print_text "${grn}Client> ${output}${nrm}"
 }
 
 function handle_input {
@@ -50,7 +77,7 @@ function handle_input {
 
     # Look for the command by looking for a function named after it
     if ! output=$(declare -f | grep "command_${command} ()"); then
-        echo Invalid command: $command
+        print_text Invalid command: $command
     else
         command_$command $*
         return $?
@@ -58,13 +85,13 @@ function handle_input {
 }
 
 function show_status_bar {
-    tput sc  # Save cursor position
+    #tput sc  # Save cursor position
     tput cup 0 0  # Move to top left
     tput el  # Clear to end of line
 
     echo "${grn}[${blu}Server:${nrm} ${status_connection}${grn}][${blu}Song:${nrm} $status_current_mp3${grn}]${nrm}"
 
-    tput rc  # Restore cursor position
+    #tput rc  # Restore cursor position
 }
 
 function usage {
@@ -100,14 +127,14 @@ function begin {
     history -r ${SHIT_DIR}/history  # Load history file for readline
     tput smcup  # Save terminal screen
     tput clear  # Clear screen
-    tput cup `tput lines` 0  # Move cursor to last line, first column
+    tput cup $(tput lines) 0  # Move cursor to last line, first column
     prompt
 }
 
 function command_quit {
     helptext="duh."
 
-    if [ $stream_pid -ne 0 ]; then
+    if is_connected; then
         command_disconnect
     fi
 
@@ -140,14 +167,14 @@ function command_play {
     helptext="Play some shit that's on the server"
     helptext="Usage: play"
 
-    if [ -z "$shit_server" ]; then
-        echo "You need to connect first"
+    if ! is_connected; then
+        print_text "You need to connect first"
         return
     fi
 
-    if [ $stream_pid -ne 0 ]; then
-        echo "Currently streaming, disconnect first"
-        return
+    if is_streaming; then
+        print_text "Currently streaming, disconnect first"
+        return 1
     fi
 
     (
@@ -200,7 +227,7 @@ function command_stop {
     helptext="Stop playing the shit coming from the server"
     helptext="Usage: stop"
 
-    if [ $stream_pid -ne 0 ]; then
+    if is_streaming; then
         kill $stream_pid
         wait $stream_pid
         stream_pid=0
@@ -216,10 +243,10 @@ function command_connect {
         command_disconnect
     fi
 
-    echo "Connecting to $1:$2"
+    print_text "Connecting to $1:$2"
     { exec 3<> /dev/tcp/$1/$2; } 2>/dev/null
     if [ $? -ne 0 ]; then
-        echo 'Connection refused'
+        print_text 'Connection refused'
         return 1
     fi
 
@@ -228,27 +255,52 @@ function command_connect {
 
     echo -e 'SHIT 1' >&3
 
+    (
+        while true; do
+            read line <&3
+            sleep 1
+            if [ -n "$line" ]; then
+                print_server_text "$line"
+            fi
+        done
+    ) &
+    connection_pid=$!
+
     status_connection="Connected to $shit_server $shit_port"
-    echo "Connected to $1:$2"
+    print_text "Connected to $1:$2"
+}
+
+function is_connected {
+    [ "$connection_pid" -eq 0 ] && return 1
+    return 0
+}
+
+function is_streaming {
+    [ "$stream_pid" -eq 0 ] && return 1
+    return 0
 }
 
 function command_disconnect {
     helptext="Disconnect from current stream of shit"
     helptext="Usage: disconnect"
 
-    if [ -z "$shit_server" ]; then
-        echo "Not connected"
+    if ! is_connected; then
+        print_text "Not connected"
         return 1
     fi
 
     v "Disconnecting from ${shit_server}:${shit_port}"
 
-    if [ $stream_pid -ne 0 ]; then
+    if is_streaming; then
         command_stop
     fi
 
+    kill $connection_pid
+    wait $connection_pid
     shit_server=""
     shit_port=""
+    connection_pid=0
+
     exec 3<&-
 
     status_connection="Not connected"
@@ -261,8 +313,8 @@ function command_shit {
     helptext[3]="  url	A URL to a song on a site supported by anything2mp3.com"
 
     function shit_the_bed {
-        echo "${bld}You shit the bed${nrm}"
-        printf -- '%s\n' "${helptext[@]:1}"
+        print_text "${bld}You shit the bed${nrm}"
+        print_text $(printf -- '%s\n' "${helptext[@]:1}")
         return
     }
 
@@ -271,8 +323,8 @@ function command_shit {
     if [ $# -ne 2 ]; then shit_the_bed; return; fi
 
     # Can only upload if connected
-    if [ -z "$shit_server" ]; then
-        echo "Not connected"
+    if ! is_connected; then
+        print_text "Not connected"
         return
     fi
 
@@ -280,14 +332,15 @@ function command_shit {
         mp3=$(echo $2 | sed "s!^\~!${HOME}!")
 
         if [ ! -f $mp3 ]; then
-            echo "File not found: $mp3"
+            print_text "File not found: $mp3"
             return
         fi
 
         echo "shit_mp3" >&3
         echo >&3
         cat $mp3 >&3
-        echo "Sent MP3 to stream"
+        print_client_text "shit_mp3 <data>"
+        print_text "Sent mp3 to server"
         return
     fi
 
@@ -295,12 +348,8 @@ function command_shit {
         echo "shit_url" >&3
         echo "$2" >&3
         echo >&3
-
-        read line <&3
-        while [ -n "$line" ]; do
-            echo $line
-            read line <&3
-        done
+        print_client_text "shit_url $2"
+        print_text "Sent URL to stream"
         return
     fi
 
@@ -310,12 +359,13 @@ function command_shit {
 function command_ping {
     helptext="Test connection"
 
+    if ! is_connected; then
+        print_text 'Not connected'
+        return 1
+    fi
+
     echo -e 'ping\n' >&3
-    read line <&3
-    while [ -n "$line" ]; do
-        echo $line
-        read line <&3
-    done
+    print_client_text "ping"
 }
 
 function command_help {
@@ -326,21 +376,23 @@ function command_help {
 
     if [ -z "$@" ]; then
         for command in $(declare -f | grep ^command_ | sed 's/(). *//'); do
-            echo $command | sed -r 's/^command_([A-Za-z_]*).*/\1/'
+            print_text $(echo $command | sed -r 's/^command_([A-Za-z_]*).*/\1/')
         done
     else
         for command in "$@"; do
             if [ "$(declare -f | grep -c command_$command)" -eq 0 ]; then
-                echo "No help content found for ${bld}${command}${nrm}"
+                print_text "No help content found for ${bld}${command}${nrm}"
             else
-                echo "${bld}${command}${nrm}"
+                print_text "${bld}${command}${nrm}"
 
                 # The [][0-9]* will optionally match helptext arrays, all the
                 # quoting is to match double or single quotes
-                declare -f command_$command |
+                print_text $(
+                    declare -f command_$command |
                     grep '[h]elptext[][0-9]*=' |
                     sed 's/^ *[h]elptext[][0-9]*=["'"'"']//g' |
                     sed 's/['"'"'"];//'
+                )
             fi
         done
     fi

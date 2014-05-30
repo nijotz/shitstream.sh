@@ -41,7 +41,6 @@ Example:
     $ shit> help
 
 TODO:
-* Instant return of commands from server and server communicates command status async
 * Keep mp3s on client for cache or adding to personal music collection
 * Separate server log messages by client
 * SSL
