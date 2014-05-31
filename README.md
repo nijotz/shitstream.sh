@@ -39,10 +39,3 @@ Example:
     $ shit> play
     ♫ ♪ ♩
     $ shit> help
-
-TODO:
-* Keep mp3s on client for cache or adding to personal music collection
-* Separate server log messages by client
-* SSL
-* Users (song added by userx)
-* Passwords and/or stream passwords
