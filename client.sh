@@ -31,7 +31,7 @@ function prompt {
         # streaming subprocess puts its status strings in toilet.  Load it for
         # the status bar.
         test -f ${SHIT_DIR}/toilet && source ${SHIT_DIR}/toilet
-        show_status_bar
+        print_status_bar
         tput cup $(tput lines) 0
 
         # Read input with readline support (-e), ctrl-d will quit
@@ -68,6 +68,20 @@ function print_client_text {
     print_text "${grn}Client> ${output}${nrm}"
 }
 
+function print_status_bar {
+    lockfile -1 -r 60 ${SHIT_DIR}/output.lock
+
+    tput sc  # Save cursor position
+    tput cup 0 0  # Move to top left
+    tput el  # Clear to end of line
+
+    echo "${grn}[${blu}Server:${nrm} ${status_connection}${grn}][${blu}Song:${nrm} $status_current_mp3${grn}]${nrm}"
+
+    tput rc  # Restore cursor position
+
+    rm -f ${SHIT_DIR}/output.lock
+}
+
 function handle_input {
     command=${1}; shift
 
@@ -86,16 +100,6 @@ function handle_input {
         command_$command $*
         return $?
     fi
-}
-
-function show_status_bar {
-    #tput sc  # Save cursor position
-    tput cup 0 0  # Move to top left
-    tput el  # Clear to end of line
-
-    echo "${grn}[${blu}Server:${nrm} ${status_connection}${grn}][${blu}Song:${nrm} $status_current_mp3${grn}]${nrm}"
-
-    #tput rc  # Restore cursor position
 }
 
 function usage {
@@ -189,7 +193,7 @@ function command_play {
             status_current_mp3=$2
             echo "status_connection=\"$1\"" > ${SHIT_DIR}/toilet
             echo "status_current_mp3=\"$2\"" >> ${SHIT_DIR}/toilet
-            show_status_bar
+            print_status_bar
         }
 
         function identify_mp3 {
