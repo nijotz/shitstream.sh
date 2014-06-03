@@ -13,6 +13,7 @@ Prerequisites (server):
 * beets
 
 Beets setup:
+
     $ mkvirtualenv shitstream
     $ pip install beets       # for auto-tagging mp3s
     $ pip install pyacoustid  # for identifying mp3s by acoustic signature
