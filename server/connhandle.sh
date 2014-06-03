@@ -6,7 +6,15 @@ set -e
 # sent to the terminal
 exec 3>&1 1>&2
 
-source mp3base.sh
+LOCKFILE="shit.lock"
+MP3DIR="mp3s"
+mkdir -p ${MP3DIR}/in
+
+# For now just echo, will add verbosity options later
+function v {
+    echo $*
+}
+
 CURRENT="current"
 #STANDBY="trumpet.mp3"
 trap "rm -f $LOCKFILE; exit" INT TERM EXIT

@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 setup() {
-    bash server.sh 8676 &
+    bash server/server.sh 8676 &
     echo $! > $BATS_TMPDIR/server.pid
     sleep 1
 }

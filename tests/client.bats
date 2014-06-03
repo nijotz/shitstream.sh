@@ -1,7 +1,11 @@
 #!/usr/bin/env bats
 
+base_dir=$(pwd) # Assume we're in the root path of the source
+client_dir=$base_dir/client/
+server_dir=$base_dir/server/
+
 setup() {
-    bash server.sh 8676 &
+    bash $server_dir/server.sh 8676 &
     echo $! > $BATS_TMPDIR/server.pid
     sleep 1
 }
@@ -14,7 +18,7 @@ teardown() {
 
 @test "Test connection" {
     function good_connection {
-        echo connect 0.0.0.0 8676 | bash client.sh
+        echo connect 0.0.0.0 8676 | bash $client_dir/client.sh
     }
     run good_connection
     output=$(for item in ${lines[*]}; do echo $item; done)
@@ -26,7 +30,7 @@ teardown() {
 
 @test "Test handling of bad connection" {
     function bad_connection {
-        echo connect 0.0.0.0 8677 | bash client.sh
+        echo connect 0.0.0.0 8677 | bash $client_dir/client.sh
     }
     run bad_connection
     output=$(for item in ${lines[*]}; do echo $item; done)
@@ -38,7 +42,7 @@ teardown() {
 
 @test "Test client ping" {
     function connection {
-        echo -e 'connect 0.0.0.0 8676\nping\n' | bash client.sh
+        echo -e 'connect 0.0.0.0 8676\nping\n' | bash $client_dir/client.sh
     }
     run connection
     output=$(for item in ${lines[*]}; do echo $item; done)
