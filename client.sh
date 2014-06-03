@@ -11,8 +11,8 @@ status_connection="Not connected"
 status_current_mp3="Not streaming"
 
 # Used for setting text color/attributes
-bld=$(tput bold)
 nrm=$(tput sgr0)
+bld=$(tput bold)
 red=$(tput setaf 1)
 grn=$(tput setaf 2)
 ylw=$(tput setaf 3)
@@ -43,6 +43,7 @@ function prompt {
 }
 
 function print_text {
+    lockfile -1 -r 60 ${SHIT_DIR}/output.lock
     lines=$(tput lines)
     last1=$(( $lines - 2 ))
     last=$(( $lines - 1 ))
@@ -50,10 +51,11 @@ function print_text {
     tput sc
     tput csr 1 $last1
     tput cup $last1
-    echo $*
+    echo -e $*
     tput csr 0 $last
     tput rc
     tput xonc
+    rm -f ${SHIT_DIR}/output.lock
 }
 
 function print_server_text {
@@ -74,6 +76,8 @@ function handle_input {
 
     # Append command to history
     history -s $command $*
+
+    print_text "shit> $command $*"
 
     # Look for the command by looking for a function named after it
     if ! output=$(declare -f | grep "command_${command} ()"); then
@@ -123,6 +127,7 @@ function begin {
     done
 
     mkdir -p ${SHIT_DIR}
+    rm -f ${SHIT_DIR}/output.lock
     command_loadcfg ${SHIT_DIR}/config
     history -r ${SHIT_DIR}/history  # Load history file for readline
     tput smcup  # Save terminal screen
@@ -143,6 +148,7 @@ function command_quit {
     command_savecfg
     tput rmcup  # Restore original terminal output
     history -w ${SHIT_DIR}/history  # Write history file
+    rm -f ${SHIT_DIR}/output.lock
     exit
 }
 trap command_quit SIGINT SIGTERM SIGHUP EXIT
@@ -258,7 +264,6 @@ function command_connect {
     (
         while true; do
             read line <&3
-            sleep 1
             if [ -n "$line" ]; then
                 print_server_text "$line"
             fi
