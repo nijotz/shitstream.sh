@@ -33,8 +33,13 @@ err=0
 while [ $err -eq 0 ]; do
     exec 4<> /dev/tcp/$shit_server/$shit_port
     echo -e "SHIT 1\nshit_on_me\n" >&4
+    print_client_text "shit_on_me"
     read length <&4
+    print_server_text "$length"
+    print_server_text "<mp3 data>"
+    print_text "Receiving mp3 from server"
     dd bs=1 count=$length <&4 > ${SHIT_DIR}/mp3 2>/dev/null
+    print_text "mp3 received, playing"
     exec 4<&-
     update_status_bar "Playing from $shit_server $shit_port" "$(identify_mp3 ${SHIT_DIR}/mp3)"
     mpg123 ${SHIT_DIR}/mp3 >/dev/null 2>&1 &
