@@ -43,7 +43,7 @@ function command_disconnect {
         return 1
     fi
 
-    v "Disconnecting from ${shit_server}:${shit_port}"
+    print_text "Disconnecting from ${shit_server}:${shit_port}"
 
     if is_streaming; then
         command_stop
