@@ -105,6 +105,7 @@ function command_quit {
     command_savecfg
     tput rmcup  # Restore original terminal output
     history -w ${SHIT_DIR}/history  # Write history file
+    trap - SIGINT SIGTERM SIGHUP EXIT
     rm -f ${SHIT_DIR}/output.lock
     exit
 }
