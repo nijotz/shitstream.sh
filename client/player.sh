@@ -21,7 +21,7 @@ function identify_mp3 {
 }
 
 function cleanup_player {
-    print_text "Cleaning up player"
+    log INFO "Cleaning up player"
 
     rm -f ${SHIT_DIR}/toilet
 
