@@ -20,29 +20,51 @@ function identify_mp3 {
     fi
 }
 
-function cleanup {
+function cleanup_player {
+    print_text "Cleaning up player"
+
+    set -x
     rm -f ${SHIT_DIR}/toilet
+    set +x
+
     for job in $(jobs -p); do
         kill $job
         wait $job
     done
 }
-trap cleanup SIGINT SIGTERM SIGHUP EXIT
+trap cleanup_player SIGINT SIGTERM SIGHUP EXIT
 
-err=0
-while [ $err -eq 0 ]; do
-    exec 4<> /dev/tcp/$shit_server/$shit_port
-    echo -e "SHIT 1\nshit_on_me\n" >&4
-    print_client_text "shit_on_me"
-    read length <&4
-    print_server_text "$length"
-    print_server_text "<mp3 data>"
-    print_text "Receiving mp3 from server"
-    dd bs=1 count=$length <&4 > ${SHIT_DIR}/mp3 2>/dev/null
-    print_text "mp3 received, playing"
-    exec 4<&-
-    update_status_bar "Playing from $shit_server $shit_port" "$(identify_mp3 ${SHIT_DIR}/mp3)"
-    mpg123 ${SHIT_DIR}/mp3 >/dev/null 2>&1 &
-    wait $!
-    err=$?
-done
+function play_stream {
+    trap cleanup_player SIGINT SIGTERM SIGHUP EXIT
+
+    err=0
+    while [ $err -eq 0 ]; do
+
+        # Open connection to server
+        exec 4<> /dev/tcp/$shit_server/$shit_port
+
+        # Set protocol and ask for mp3
+        echo -e "SHIT 1\nshit_on_me\n" >&4
+        print_client_text "shit_on_me"
+
+        # Get length of mp3
+        read length <&4
+        print_server_text "$length"
+        print_server_text "<mp3 data>"
+        print_text "Receiving mp3 from server"
+
+        # Read mp3 data
+        dd bs=1 count=$length <&4 > ${SHIT_DIR}/mp3 2>/dev/null
+        print_text "mp3 received, playing"
+        exec 4<&-
+
+        # Upate status bar
+        update_status_bar "Playing from $shit_server $shit_port" "$(identify_mp3 ${SHIT_DIR}/mp3)"
+
+        # Start playing mp3
+        mpg123 ${SHIT_DIR}/mp3 >/dev/null 2>&1 &
+        wait $!
+        err=$?
+
+    done
+}

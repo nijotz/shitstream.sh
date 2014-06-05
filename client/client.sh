@@ -10,7 +10,9 @@ connection_pid=0
 status_connection="Not connected"
 status_current_mp3="Not streaming"
 
+
 source $(dirname $0)/display.sh
+source $(dirname $0)/player.sh
 for f in $(dirname $0)/commands/*; do
     source $f
 done

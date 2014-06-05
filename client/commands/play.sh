@@ -16,7 +16,7 @@ function command_play {
         return 1
     fi
 
-    ( source $DIR/../player.sh ) &
+    play_stream &
     stream_pid=$!
 }
 
