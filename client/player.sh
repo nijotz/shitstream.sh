@@ -23,9 +23,7 @@ function identify_mp3 {
 function cleanup_player {
     print_text "Cleaning up player"
 
-    set -x
     rm -f ${SHIT_DIR}/toilet
-    set +x
 
     for job in $(jobs -p); do
         kill $job
