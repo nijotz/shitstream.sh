@@ -21,6 +21,24 @@ for f in $(dirname $0)/commands/*; do
     source $f
 done
 
+function traceback {
+    # Hide the traceback() call.
+    local -i start=$(( ${1:-0} + 1 ))
+    local -i end=${#BASH_SOURCE[@]}
+    local -i i=0
+    local -i j=0
+
+    log ERROR "Traceback (last called is first):"
+    echo "Traceback (last called is first):"
+    for ((i=${start}; i < ${end}; i++)); do
+        j=$(( $i - 1 ))
+        local function="${FUNCNAME[$i]}"
+        local file="${BASH_SOURCE[$i]}"
+        local line="${BASH_LINENO[$j]}"
+        log ERROR " ${function}() in ${file}:${line}"
+        echo " ${function}() in ${file}:${line}"
+    done
+}
 
 function prompt {
     while true; do
@@ -107,12 +125,19 @@ function command_quit {
     pkill -P $$
 
     command_savecfg
-    tput rmcup  # Restore original terminal output
+    if [ "$1" != "bad" ]; then
+        tput rmcup  # Restore original terminal output
+    else
+        traceback 1
+    fi
     history -w ${SHIT_DIR}/history  # Write history file
     trap - SIGINT SIGTERM SIGHUP EXIT
     rm -f ${SHIT_DIR}/output.lock
+    for cleanup in $(declare -f | grep cleanup_ | sed 's/ .*//'); do
+        $cleanup
+    done
     exit
 }
-trap command_quit SIGINT SIGTERM SIGHUP EXIT
+trap "command_quit bad" SIGINT SIGTERM SIGHUP EXIT
 
 main
