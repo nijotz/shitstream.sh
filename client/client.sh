@@ -112,6 +112,9 @@ function main {
     tput smcup  # Save terminal screen
     tput clear  # Clear screen
     tput cup $(tput lines) 0  # Move cursor to last line, first column
+    for startup in $(declare -f | grep startup_ | sed 's/ \(\).*//'); do
+        $startup
+    done
     prompt
 }
 
