@@ -1,5 +1,8 @@
 #!/bin/bash
 
+shit_server=""
+shit_port=""
+
 function command_connect {
     helptext="Connect to a stream of shit"
     helptext="Usage: connect <server> <port>"

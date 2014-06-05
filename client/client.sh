@@ -42,7 +42,7 @@ function traceback {
 
 function prompt {
     while true; do
-        # TODO: Improve how stream status is passed from the child process The
+        # TODO: Improve how stream status is passed from the child process. The
         # streaming subprocess puts its status strings in toilet.  Load it for
         # the status bar.
         test -f ${SHIT_DIR}/toilet && source ${SHIT_DIR}/toilet
@@ -52,6 +52,9 @@ function prompt {
         # Read input with readline support (-e), ctrl-d will quit
         read -e -p "shit> " input 2>&1 || command_quit
 
+        # Ignore empty input
+        if [ -z "$input" ]; then continue; fi
+
         log DEBUG "Handling input: $input"
         handle_input $input
     done
@@ -59,9 +62,6 @@ function prompt {
 
 function handle_input {
     command=${1}; shift
-
-    # Ignore empty input
-    test "$command" == "" && return
 
     # Append command to history
     history -s $command $*
