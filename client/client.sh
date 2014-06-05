@@ -128,7 +128,7 @@ function command_quit {
     pkill -P $$
 
     command_savecfg
-    if [ "$1" != "bad" ]; then
+    if [ "${1:-good}" != "bad" ]; then
         tput rmcup  # Restore original terminal output
     else
         traceback 1
