@@ -50,9 +50,9 @@ function prompt {
         tput cup $(tput lines) 0
 
         # Read input with readline support (-e), ctrl-d will quit
-        read -e -p "shit> " input
-        test $? != 0 && command_quit
+        read -e -p "shit> " input 2>&1 || command_quit
 
+        log DEBUG "Handling input: $input"
         handle_input $input
     done
 }
@@ -69,11 +69,11 @@ function handle_input {
     print_text "shit> $command $*"
 
     # Look for the command by looking for a function named after it
+    log DEBUG "Looking for defined command: ${command}"
     if ! output=$(declare -f | grep "command_${command} ()"); then
         print_text Invalid command: $command
     else
-        command_$command $*
-        return $?
+        command_$command $* || return $?
     fi
 }
 
