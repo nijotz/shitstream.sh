@@ -1,3 +1,5 @@
+#!/bin/bash
+
 function command_help {
     helptext="Display help for commands"
     helptext="Usage: help <command> [command2] [command3] ..."
