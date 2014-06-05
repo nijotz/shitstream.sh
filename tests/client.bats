@@ -16,38 +16,53 @@ teardown() {
     wait $server_pid
 }
 
+function test_status_output {
+    run $1
+    [ "$2" -eq 0 ]
+    [ $(echo ${lines[@]} | grep -c "$3") -ne "0" ]
+}
+
 @test "Test connection" {
     function good_connection {
         echo connect 0.0.0.0 8676 | bash $client_dir/client.sh
     }
-    run good_connection
-    output=$(for item in ${lines[*]}; do echo $item; done)
-    output=$(echo $output |
-        sed -e '/Connecting to 0.0.0.0:8676/,/Connected to 0.0.0.0:8676/!d')
-    [ "$status" -eq 0 ]
-    [ -n "$output" ]
+    test_status_output \
+        good_connection \
+        0 \
+        'Connecting to 0.0.0.0:8676.*Connected to 0.0.0.0:8676'
 }
 
 @test "Test handling of bad connection" {
     function bad_connection {
         echo connect 0.0.0.0 8677 | bash $client_dir/client.sh
     }
-    run bad_connection
-    output=$(for item in ${lines[*]}; do echo $item; done)
-    output=$(echo $output |
-        sed -e '/Connecting to 0.0.0.0:8677/,/Connection refused/!d')
-    [ "$status" -eq 0 ]
-    [ -n "$output" ]
+    test_status_output \
+        bad_connection \
+        0 \
+        'Connecting to 0.0.0.0:8677.*Connection refused'
+}
+
+function ping {
+    fifo=${BATS_TMPDIR}/client.fifo
+    mkfifo $fifo
+    line=""
+    while [ "$line" != "quit" ]; do
+        read line < $fifo
+        echo $line
+    done | bash $client_dir/client.sh &
+    echo 'connect 0.0.0.0 8676' > $fifo
+    sleep 2
+    echo 'ping' > $fifo
+    sleep 2
+    echo 'quit' > $fifo
+    rm -f $fifo
 }
 
 @test "Test client ping" {
-    function connection {
-        echo -e 'connect 0.0.0.0 8676\nping\n' | bash $client_dir/client.sh
-    }
-    run connection
-    output=$(for item in ${lines[*]}; do echo $item; done)
-    output=$(echo $output |
-        sed -e '/Connecting to 0.0.0.0:8676/,/pong/!d')
-    [ "$status" -eq 0 ]
-    [ -n "$output" ]
+    test_status_output ping 0 'Connecting to 0.0.0.0:8676.*pong'
+}
+
+@test "Test client cleanup" {
+    run ping
+    [ "$(ls ~/.shitstream | grep -Ev '(^history$|^config$|^mp3$)' | wc -l)" == "0" ]
 }
