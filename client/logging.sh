@@ -10,7 +10,7 @@ function log {
     shift
     msg=$*
 
-    if [[ ! $level =~ "INFO|ERROR|DEBUG" ]]; then
+    if [[ ! $level =~ INFO|ERROR|DEBUG ]]; then
         msg="$level $msg"
         level="ERROR"
     fi
