@@ -1,5 +1,37 @@
 #!/bin/bash
 
+function startup_player {
+    rm -f ${SHIT_DIR}/mpg123.fifo
+    mkfifo ${SHIT_DIR}/mpg123.fifo
+    (
+        # jesus fuck, bash makes me do stupid shit
+        {
+            mpg123 --fifo ${SHIT_DIR}/mpg123.fifo -R 2>/dev/null &
+            echo $! > ${SHIT_DIR}/mpg123.pid
+        } | while read line; do
+            echo $line > ${SHIT_DIR}/mpg123.out
+        done
+    ) &
+    mpg123_pid=$(cat ${SHIT_DIR}/mpg123.pid)
+    log DEBUG "mpg123 pid: $mpg123_pid"
+    sleep 1
+    echo silence > ${SHIT_DIR}/mpg123.fifo
+}
+
+function cleanup_player {
+    log INFO "Cleaning up player"
+
+    pidf=${SHIT_DIR}/mpg123.pid
+    [ -f $pidf ] && pid=$(cat $pidf) && kill $pid
+
+    rm -f ${SHIT_DIR}/mpg123.pid
+    rm -f ${SHIT_DIR}/toilet  # Used to communicate player status to status bar
+    rm -f ${SHIT_DIR}/mpg123.fifo
+    rm -f ${SHIT_DIR}/mpg123.out
+
+}
+trap cleanup_player SIGINT SIGTERM SIGHUP EXIT
+
 function update_status_bar {
     status_connection=$1
     status_current_mp3=$2
@@ -20,17 +52,10 @@ function identify_mp3 {
     fi
 }
 
-function cleanup_player {
-    log INFO "Cleaning up player"
-
-    rm -f ${SHIT_DIR}/toilet
-
-    for job in $(jobs -p); do
-        kill $job
-        wait $job
-    done
+function player_command {
+    echo "$*" > ${SHIT_DIR}/mpg123.fifo
+    cat ${SHIT_DIR}/mpg123.out
 }
-trap cleanup_player SIGINT SIGTERM SIGHUP EXIT
 
 function play_stream {
     trap cleanup_player SIGINT SIGTERM SIGHUP EXIT
@@ -56,13 +81,18 @@ function play_stream {
         print_text "mp3 received, playing"
         exec 4<&-
 
-        # Upate status bar
+        # Update status bar
         update_status_bar "Playing from $shit_server $shit_port" "$(identify_mp3 ${SHIT_DIR}/mp3)"
 
-        # Start playing mp3
-        mpg123 ${SHIT_DIR}/mp3 >/dev/null 2>&1 &
-        wait $!
-        err=$?
+        # Load song
+        output=$(player_command "L ${SHIT_DIR}/mp3")
 
+        # Wait for end of song
+        stat=""
+        while [ "$stat" != "@E No stream opened. (code 24)" ]; do
+            stat=$(player_command sample)
+            sleep 1
+        done
+        print_text "mp3 finished, requesting new one"
     done
 }
