@@ -40,7 +40,7 @@ function command_pause {
     if is_streaming; then
         player_pause && print_text Paused || print_text Unpaused
     else
-        print_next "Not streaming"
+        print_text "Not streaming"
     fi
 }
 
