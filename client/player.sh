@@ -1,32 +1,42 @@
 #!/bin/bash
 
+mpg123_out=${SHIT_DIR}/mpg123.out
+
 function startup_player {
-    local pidf=${SHIT_DIR}/mpg123.pid
-    local fifo=${SHIT_DIR}/mpg123.fifo
 
     # jesus fuck, bash makes me do stupid shit
-    touch ${SHIT_DIR}/mpg123.out
-    exec 6> >(
+    rm -f $mpg123_out
+    touch $mpg123_out
+    exec 7> >(
         mpg123 -R 2>/dev/null | while read line; do
-            echo $line >> ${SHIT_DIR}/mpg123.out
+            echo $line >> $mpg123_out
         done
     )
 
-    output=$(player_command silence)
+    # Read output of mpg123 for 'ready' signal and send the 'silence' signal
+    if player_communication "" ^@R >/dev/null; then
+        if player_communication silence @silence >/dev/null; then
+            log INFO "mpg123 initialized"
+            return 0
+        else
+            log ERROR "Could not silence mpg123"
+            return 1
+        fi
+    else
+        log ERROR "mpg123 failed to load"
+        return 1
+    fi
 }
 
 function cleanup_player {
     log INFO "Cleaning up player"
 
     log DEBUG "Closing mpg123 file descriptor"
-    exec 6<&-
+    exec 7<&-
     log DEBUG "mpg123 file descriptor closed"
 
-    kill_children
-
-    rm -f ${SHIT_DIR}/mpg123.pid
     rm -f ${SHIT_DIR}/toilet  # Used to communicate player status to status bar
-    rm -f ${SHIT_DIR}/mpg123.fifo
+    rm -f ${SHIT_DIR}/mpg123.in
     rm -f ${SHIT_DIR}/mpg123.out
 }
 
@@ -50,26 +60,23 @@ function identify_mp3 {
     fi
 }
 
-function player_command {
-    log DEBUG "Sending to mpg123: $*"
-    echo "$*" >&6
+function player_communication {
 
-    outfile=${SHIT_DIR}/mpg123.out
-    output=""
-    if [ -f $outfile ]; then
-        timeout=3
-        output=$(cat $outfile)
-        while [ -z "$output" ] && [ $timeout != 0 ]; do
-            log DEBUG "No output from mpg123, trying again"
-            output=$(cat $outfile)
-            timeout=$(( $timeout - 1 ))
-            sleep 1
-        done
-    else
-        log ERROR "No mpg123 out file"
+    if [ -n "${1:-""}" ]; then
+        log DEBUG "Sending to mpg123: $1"
+        echo "$1" >&7
     fi
 
-    cat /dev/null > $outfile
+    tries=0
+    output=""
+    while [ $tries -lt 3 ]; do
+        if grep -q "${2:-""}" $mpg123_out; then
+            output=$(cat $mpg123_out)
+            break
+        fi
+    done
+
+    cat /dev/null > $mpg123_out
 
     log DEBUG "Got output from mpg123 :: $output ::"
     echo $output
@@ -106,12 +113,12 @@ function play_stream {
         update_status_bar "Playing from $shit_server $shit_port" "$(identify_mp3 ${SHIT_DIR}/mp3)"
 
         # Load song
-        output=$(player_command "L ${SHIT_DIR}/mp3")
+        output=$(player_communication "L ${SHIT_DIR}/mp3")
 
         # Wait for end of song
         stat="0"
         while [ "$stat" != "@E No stream opened. (code 24)" ] && [ "$stat" != "" ]; do
-            stat=$(player_command sample)
+            stat=$(player_communication sample @S)
             sleep 10
         done
         print_text "mp3 finished"
@@ -120,7 +127,7 @@ function play_stream {
 
 player_paused=0
 function player_pause {
-    output=$(player_command P)
+    output=$(player_communication P @P)
     log DEBUG "Pause output: $output"
     player_pause=$( [ "$output" == "@P 1" ] ; echo $? )
     return $player_pause
