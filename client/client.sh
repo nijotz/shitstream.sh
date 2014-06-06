@@ -125,7 +125,8 @@ function main {
     done
 
     # Load history file for readline
-    history -r ${SHIT_DIR}/history
+    hist_file=${SHIT_DIR}/history
+    [ -f $hist_file ] && history -r $hist_file
 
     tput smcup  # Save terminal screen
     tput clear  # Clear screen
