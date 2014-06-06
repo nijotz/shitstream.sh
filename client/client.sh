@@ -120,8 +120,14 @@ function main {
     tput clear  # Clear screen
     tput cup $(tput lines) 0  # Move cursor to last line, first column
 
+    # Call logging startup manually, so logging can happen ASAP
+    startup_logging
+    log INFO "Calling startup function: startup_logging"
+
     # Call startup functions from sourced files
     for startup in $(declare -f | grep startup_ | sed 's/ \(\).*//'); do
+        if [ $startup == "startup_logging" ]; then continue; fi
+        log INFO "Calling startup function: $startup"
         $startup
     done
 
@@ -149,8 +155,14 @@ function command_quit {
 
     # Call all cleanup functions from source files
     for cleanup in $(declare -f | grep cleanup_ | sed 's/ .*//'); do
+        if [ $cleanup == "cleanup_logging" ]; then continue; fi
+        log INFO "Calling cleanup function: $cleanup"
         $cleanup
     done
+
+    # Call logging cleanup manually, so logging can happen ALAP
+    log INFO "Calling cleanup function: cleanup_logging"
+    cleanup_logging
 
     exit
 }
