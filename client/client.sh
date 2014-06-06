@@ -143,6 +143,8 @@ function main {
         $startup
     done
 
+    log INFO "Startup done, prompting user"
+
     # Start prompt loop
     prompt
 }

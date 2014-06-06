@@ -7,6 +7,8 @@ function startup_player {
     # jesus fuck, bash makes me do stupid shit
     rm -f $mpg123_out
     touch $mpg123_out
+
+    log INFO "Starting mpg123"
     exec 7> >(
         mpg123 -R 2>/dev/null | while read line; do
             echo $line >> $mpg123_out
