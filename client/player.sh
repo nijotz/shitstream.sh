@@ -1,36 +1,34 @@
 #!/bin/bash
 
 function startup_player {
-    rm -f ${SHIT_DIR}/mpg123.fifo
-    mkfifo ${SHIT_DIR}/mpg123.fifo
-    (
-        # jesus fuck, bash makes me do stupid shit
-        {
-            mpg123 --fifo ${SHIT_DIR}/mpg123.fifo -R 2>/dev/null &
-            echo $! > ${SHIT_DIR}/mpg123.pid
-        } | while read line; do
-            echo $line > ${SHIT_DIR}/mpg123.out
+    local pidf=${SHIT_DIR}/mpg123.pid
+    local fifo=${SHIT_DIR}/mpg123.fifo
+
+    # jesus fuck, bash makes me do stupid shit
+    touch ${SHIT_DIR}/mpg123.out
+    exec 6> >(
+        mpg123 -R 2>/dev/null | while read line; do
+            echo $line >> ${SHIT_DIR}/mpg123.out
         done
-    ) &
-    mpg123_pid=$(cat ${SHIT_DIR}/mpg123.pid)
-    log DEBUG "mpg123 pid: $mpg123_pid"
-    sleep 1
-    echo silence > ${SHIT_DIR}/mpg123.fifo
+    )
+
+    output=$(player_command silence)
 }
 
 function cleanup_player {
     log INFO "Cleaning up player"
 
-    pidf=${SHIT_DIR}/mpg123.pid
-    [ -f $pidf ] && pid=$(cat $pidf) && kill $pid
+    log DEBUG "Closing mpg123 file descriptor"
+    exec 6<&-
+    log DEBUG "mpg123 file descriptor closed"
+
+    kill_children
 
     rm -f ${SHIT_DIR}/mpg123.pid
     rm -f ${SHIT_DIR}/toilet  # Used to communicate player status to status bar
     rm -f ${SHIT_DIR}/mpg123.fifo
     rm -f ${SHIT_DIR}/mpg123.out
-
 }
-trap cleanup_player SIGINT SIGTERM SIGHUP EXIT
 
 function update_status_bar {
     status_connection=$1
@@ -53,15 +51,38 @@ function identify_mp3 {
 }
 
 function player_command {
-    echo "$*" > ${SHIT_DIR}/mpg123.fifo
-    cat ${SHIT_DIR}/mpg123.out
+    log DEBUG "Sending to mpg123: $*"
+    echo "$*" >&6
+
+    outfile=${SHIT_DIR}/mpg123.out
+    output=""
+    if [ -f $outfile ]; then
+        timeout=3
+        output=$(cat $outfile)
+        while [ -z "$output" ] && [ $timeout != 0 ]; do
+            log DEBUG "No output from mpg123, trying again"
+            output=$(cat $outfile)
+            timeout=$(( $timeout - 1 ))
+            sleep 1
+        done
+    else
+        log ERROR "No mpg123 out file"
+    fi
+
+    cat /dev/null > $outfile
+
+    log DEBUG "Got output from mpg123 :: $output ::"
+    echo $output
 }
 
+playing=0
 function play_stream {
-    trap cleanup_player SIGINT SIGTERM SIGHUP EXIT
+    # Intended to be backgrounded. If not background these traps will clear the
+    # main process's traps
+    trap "cleanup_player; playing=0; exit" SIGINT SIGTERM SIGHUP
 
-    err=0
-    while [ $err -eq 0 ]; do
+    playing=1
+    while [ $playing -eq 1 ]; do
 
         # Open connection to server
         exec 4<> /dev/tcp/$shit_server/$shit_port
@@ -88,11 +109,11 @@ function play_stream {
         output=$(player_command "L ${SHIT_DIR}/mp3")
 
         # Wait for end of song
-        stat=""
-        while [ "$stat" != "@E No stream opened. (code 24)" ]; do
+        stat="0"
+        while [ "$stat" != "@E No stream opened. (code 24)" ] && [ "$stat" != "" ]; do
             stat=$(player_command sample)
-            sleep 1
+            sleep 10
         done
-        print_text "mp3 finished, requesting new one"
+        print_text "mp3 finished"
     done
 }
