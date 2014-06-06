@@ -33,6 +33,17 @@ function command_stop {
     fi
 }
 
+function command_pause {
+    helptext="Pause/unpause the shit coming from the server"
+    helptext="Usage: pause"
+
+    if is_streaming; then
+        player_pause && print_text Paused || print_text Unpaused
+    else
+        print_next "Not streaming"
+    fi
+}
+
 function is_streaming {
     [ "$stream_pid" -eq 0 ] && return 1
     return 0

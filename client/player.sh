@@ -117,3 +117,11 @@ function play_stream {
         print_text "mp3 finished"
     done
 }
+
+player_paused=0
+function player_pause {
+    output=$(player_command P)
+    log DEBUG "Pause output: $output"
+    player_pause=$( [ "$output" == "@P 1" ] ; echo $? )
+    return $player_pause
+}
