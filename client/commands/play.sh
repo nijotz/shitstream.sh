@@ -2,6 +2,7 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+stream_pid=0
 function command_play {
     helptext="Play some shit that's on the server"
     helptext="Usage: play"

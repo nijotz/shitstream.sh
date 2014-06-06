@@ -4,23 +4,6 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-SHIT_DIR=~/.shitstream
-SHIT_PLAYER=""
-
-stream_pid=0
-connection_pid=0
-
-# Initialize status messages
-status_connection="Not connected"
-status_current_mp3="Not streaming"
-
-source $(dirname $0)/logging.sh
-source $(dirname $0)/display.sh
-source $(dirname $0)/player.sh
-for f in $(dirname $0)/commands/*; do
-    source $f
-done
-
 function traceback {
     # Hide the traceback() call.
     local -i start=$(( ${1:-0} + 1 ))
@@ -37,6 +20,18 @@ function traceback {
         local line="${BASH_LINENO[$j]}"
         log ERROR " ${function}() in ${file}:${line}"
         echo " ${function}() in ${file}:${line}"
+    done
+}
+
+function kill_children {
+    for job in $(jobs -p); do
+        log DEBUG "Killing $job"
+        kill $job
+
+        log DEBUG "Waiting on $job"
+        wait $job
+
+        log DEBUG "Killed $job"
     done
 }
 
@@ -92,6 +87,9 @@ EOF
 }
 
 function main {
+    SHIT_DIR=~/.shitstream
+
+    # Parse args
     while getopts "h:d" OPTION
     do
       case $OPTION in
@@ -105,42 +103,57 @@ function main {
       esac
     done
 
-    mkdir -p ${SHIT_DIR}
-    rm -f ${SHIT_DIR}/output.lock
-    command_loadcfg ${SHIT_DIR}/config
-    history -r ${SHIT_DIR}/history  # Load history file for readline
+    mkdir -p $SHIT_DIR
+
+    # Source files, now that SHIT_DIR is set
+    source $(dirname $0)/logging.sh
+    source $(dirname $0)/display.sh
+    source $(dirname $0)/player.sh
+    for f in $(dirname $0)/commands/*; do
+        source $f
+    done
+
+    # Load history file for readline
+    history -r ${SHIT_DIR}/history
+
     tput smcup  # Save terminal screen
     tput clear  # Clear screen
     tput cup $(tput lines) 0  # Move cursor to last line, first column
+
+    # Call startup functions from sourced files
     for startup in $(declare -f | grep startup_ | sed 's/ \(\).*//'); do
         $startup
     done
+
+    # Start prompt loop
     prompt
 }
 
 function command_quit {
     helptext="duh."
 
-    if is_connected; then
-        command_disconnect
-    fi
+    # Clear trap, so it doesn't get called on exit
+    trap - EXIT
 
     pkill -P $$
 
-    command_savecfg
+    # If exiting because of error then show traceback
     if [ "${1:-good}" != "bad" ]; then
         tput rmcup  # Restore original terminal output
     else
         traceback 1
     fi
-    history -w ${SHIT_DIR}/history  # Write history file
-    trap - SIGINT SIGTERM SIGHUP EXIT
-    rm -f ${SHIT_DIR}/output.lock
+
+    # Write history file
+    history -w ${SHIT_DIR}/history
+
+    # Call all cleanup functions from source files
     for cleanup in $(declare -f | grep cleanup_ | sed 's/ .*//'); do
         $cleanup
     done
+
     exit
 }
-trap "command_quit bad" SIGINT SIGTERM SIGHUP EXIT
+trap "command_quit bad" SIGINT SIGTERM SIGHUP EXIT ERR
 
 main

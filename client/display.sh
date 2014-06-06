@@ -9,25 +9,41 @@ ylw=$(tput setaf 3)
 blu=$(tput setaf 4)
 mgn=$(tput setaf 5)
 
+# Initialize status messages
+status_connection="Not connected"
+status_current_mp3="Not streaming"
+
+function startup_display {
+    rm -f ${SHIT_DIR}/output.lock
+    rm -f ${SHIT_DIR}/toilet
+}
+
+function cleanup_display {
+    rm -f ${SHIT_DIR}/output.lock
+}
+
 function print_text {
 
-    log DEBUG "Acquiring lockfile for screen output"
+    #log DEBUG "Acquiring lockfile for screen output"
     lockfile -1 -r 60 ${SHIT_DIR}/output.lock
 
-    log DEBUG "Printing text: $*"
     lines=$(tput lines)
     last1=$(( $lines - 2 ))
     last=$(( $lines - 1 ))
+
     tput xoffc || true
     tput sc
     tput csr 1 $last1
     tput cup $last1
+
     echo -e $*
+
     tput csr 0 $last
     tput rc
     tput xonc || true
+
     rm -f ${SHIT_DIR}/output.lock
-    log DEBUG "Printed text"
+    #log DEBUG "Removed lockfile for screen output"
 }
 
 function print_server_text {

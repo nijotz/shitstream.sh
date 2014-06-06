@@ -1,5 +1,13 @@
 #!/bin/bash
 
+function startup_config {
+    command_loadcfg ${SHIT_DIR}/config
+}
+
+function cleanup_config {
+    command_savecfg
+}
+
 function command_loadcfg {
     helptext="Load configuration values from a file"
     helptext="Usage: loadcfg [cfgfile]"

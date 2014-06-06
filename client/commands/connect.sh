@@ -3,6 +3,7 @@
 shit_server=""
 shit_port=""
 
+connection_pid=0
 function command_connect {
     helptext="Connect to a stream of shit"
     helptext="Usage: connect <server> <port>"
@@ -24,6 +25,7 @@ function command_connect {
     echo -e 'SHIT 1' >&3
 
     (
+        trap command_disconnect EXIT
         while true; do
             read line <&3
             if [ -n "$line" ]; then
@@ -32,6 +34,7 @@ function command_connect {
         done
     ) &
     connection_pid=$!
+    log DEBUG "Connection pid: $connection_pid"
 
     status_connection="Connected to $shit_server $shit_port"
     print_text "Connected to $1:$2"
