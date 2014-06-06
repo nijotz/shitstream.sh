@@ -26,19 +26,24 @@ function traceback {
 function kill_tree {
     local _pid=$1
     local _sig=${2:-TERM}
-
-    exec 2>/dev/null
+    local _children=${3:-0}  # Whether to kill children only
 
     # needed to stop quickly forking parent from producing children between
     # child killing and parent killing
-    kill -stop ${_pid} || true
+    if [ $_children -eq 0 ]; then
+        log DEBUG "Stopping ${_pid}"
+        kill -stop ${_pid} 2>/dev/null || true
+    fi
 
     for _child in $(pgrep -P ${_pid}); do
         log DEBUG "Found child of $_pid ($_child), killing child tree"
         kill_tree ${_child} ${_sig}
     done
-    log DEBUG "Killing $_pid"
-    kill -${_sig} ${_pid} || true
+
+    if [ $_children -eq 0 ]; then
+        log DEBUG "Killing $_pid"
+        kill -${_sig} ${_pid} 2>/dev/null || true
+    fi
 }
 
 function prompt {
@@ -144,10 +149,9 @@ function main {
 function command_quit {
     helptext="duh."
 
-    # Clear trap, so it doesn't get called on exit
-    trap - EXIT
+    status=${1:-good}
 
-    pkill -P $$
+    log INFO "Quitting ($status)"
 
     # If exiting because of error then show traceback
     if [ "${1:-good}" != "bad" ]; then
@@ -155,6 +159,11 @@ function command_quit {
     else
         traceback 1
     fi
+
+    # Clear trap, so it doesn't get called on exit or errors
+    trap - EXIT ERR
+
+    kill_tree $$ TERM 1 || true
 
     # Write history file
     history -w ${SHIT_DIR}/history
