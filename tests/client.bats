@@ -64,5 +64,5 @@ function ping {
 
 @test "Test client cleanup" {
     run ping
-    [ "$(ls ~/.shitstream | grep -Ev '(^history$|^config$|^mp3$)' | wc -l)" == "0" ]
+    [ "$(ls ~/.shitstream | grep -Ev '(^history$|^config$|^mp3$|^client.log$)' | wc -l)" == "0" ]
 }

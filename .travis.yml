@@ -1,7 +1,7 @@
 language: bash
 
 before_script:
-    - sudo apt-get install -y nmap
+    - sudo apt-get install -y nmap mpg123
     - curl -L "https://github.com/sstephenson/bats/archive/v0.3.1.tar.gz" | tar zx
 
 script: ./bats-0.3.1/bin/bats --tap tests
