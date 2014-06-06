@@ -5,7 +5,10 @@
 
 function startup_logging {
     exec 9>> ${SHIT_DIR}/client.log
-    log INFO "Setup logging"
+}
+
+function cleanup_logging {
+    exec 9>&-
 }
 
 function log {
