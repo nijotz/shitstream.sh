@@ -37,6 +37,7 @@ function print_text {
     tput cup $last1
 
     echo -e $*
+    log DEBUG "Printed text: $*"
 
     tput csr 0 $last
     tput rc

@@ -23,16 +23,22 @@ function traceback {
     done
 }
 
-function kill_children {
-    for job in $(jobs -p); do
-        log DEBUG "Killing $job"
-        kill $job
+function kill_tree {
+    local _pid=$1
+    local _sig=${2:-TERM}
 
-        log DEBUG "Waiting on $job"
-        wait $job
+    exec 2>/dev/null
 
-        log DEBUG "Killed $job"
+    # needed to stop quickly forking parent from producing children between
+    # child killing and parent killing
+    kill -stop ${_pid} || true
+
+    for _child in $(pgrep -P ${_pid}); do
+        log DEBUG "Found child of $_pid ($_child), killing child tree"
+        kill_tree ${_child} ${_sig}
     done
+    log DEBUG "Killing $_pid"
+    kill -${_sig} ${_pid} || true
 }
 
 function prompt {
