@@ -72,12 +72,15 @@ function player_communication {
 
     tries=0
     output=""
-    while [ $tries -lt 3 ]; do
+    while : ; do
         if grep -q "${2:-""}" $mpg123_out; then
             output=$(cat $mpg123_out)
             break
         fi
+        [ $tries -lt 3 ] || break
+        log DEBUG "No mpg123 output, trying again"
         tries=$(( $tries + 1 ))
+        sleep 0.3
     done
 
     cat /dev/null > $mpg123_out
