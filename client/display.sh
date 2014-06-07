@@ -14,12 +14,12 @@ status_connection="Not connected"
 status_current_mp3="Not streaming"
 
 function startup_display {
-    rm -f ${SHIT_DIR}/output.lock
+    lockclear ${SHIT_DIR}/output.lock
     rm -f ${SHIT_DIR}/toilet
 }
 
 function cleanup_display {
-    rm -f ${SHIT_DIR}/output.lock
+    lockclear ${SHIT_DIR}/output.lock
 }
 
 function print_text {
@@ -43,7 +43,7 @@ function print_text {
     tput rc
     tput xonc || true
 
-    rm -f ${SHIT_DIR}/output.lock
+    lockclear ${SHIT_DIR}/output.lock
     #log DEBUG "Removed lockfile for screen output"
 }
 
@@ -68,5 +68,5 @@ function print_status_bar {
 
     tput rc  # Restore cursor position
 
-    rm -f ${SHIT_DIR}/output.lock
+    lockclear ${SHIT_DIR}/output.lock
 }
