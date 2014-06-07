@@ -21,5 +21,5 @@ function log {
         level="ERROR"
     fi
 
-    echo "[${level}] $msg" >&9
+    echo "[$(date)] [${level}] $msg" >&9
 }
