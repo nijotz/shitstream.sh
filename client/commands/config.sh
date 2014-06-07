@@ -14,7 +14,7 @@ function command_loadcfg {
     helptext="  cfgfile	Config file to load (default: ~/.shitstream/config)"
 
     cfg=${1:-${SHIT_DIR}/config}
-    [ -f "$cfg" ] && source $cfg
+    [ -f "$cfg" ] && source $cfg || true
 }
 
 function command_savecfg {
