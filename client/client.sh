@@ -117,10 +117,14 @@ function main {
     mkdir -p $SHIT_DIR
 
     # Source files, now that SHIT_DIR is set
-    source $(dirname $0)/logging.sh
-    source $(dirname $0)/display.sh
-    source $(dirname $0)/player.sh
+    for f in $(dirname $0)/*; do
+        if [ $f != $0 ] && [ -f $f ]; then
+            echo "Sourcing $f"
+            source $f
+        fi
+    done
     for f in $(dirname $0)/commands/*; do
+        echo "Sourcing $f"
         source $f
     done
 
