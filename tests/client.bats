@@ -18,7 +18,9 @@ teardown() {
 
 function test_status_output {
     run $1
-    [ "$2" -eq 0 ]
+    echo "Status: $status"
+    echo "Output: ${lines[@]}" | col -b  # Get rid of esc sequences
+    [ "$status" -eq $2 ]
     [ $(echo ${lines[@]} | grep -c "$3") -ne "0" ]
 }
 
