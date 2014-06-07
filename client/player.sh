@@ -17,19 +17,18 @@ function startup_player {
             echo $line >> $mpg123_out
         done
     )
+    log DEBUG "Started mpg123"
 
     # Read output of mpg123 for 'ready' signal and send the 'silence' signal
-    if player_communication "" ^@R >/dev/null; then
+    if player_communication "" '^@R' >/dev/null; then
         if player_communication silence @silence >/dev/null; then
             log INFO "mpg123 initialized"
             return 0
         else
-            log ERROR "Could not silence mpg123"
-            return 1
+            command_quit "Could not silence mpg123"
         fi
     else
-        log ERROR "mpg123 failed to load"
-        return 1
+        command_quit "mpg123 failed to load"
     fi
 }
 
@@ -66,7 +65,6 @@ function identify_mp3 {
 }
 
 function player_communication {
-
     if [ -n "${1:-""}" ]; then
         log DEBUG "Sending to mpg123: $1"
         echo "$1" >&7
@@ -79,12 +77,19 @@ function player_communication {
             output=$(cat $mpg123_out)
             break
         fi
+        tries=$(( $tries + 1 ))
     done
 
     cat /dev/null > $mpg123_out
 
     log DEBUG "Got output from mpg123 :: $output ::"
-    echo $output
+
+    if [ -n "$output" ]; then
+        echo $output
+        return 0
+    else
+        return 1
+    fi
 }
 
 playing=0
