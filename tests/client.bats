@@ -4,6 +4,11 @@ base_dir=$(pwd) # Assume we're in the root path of the source
 client_dir=$base_dir/client/
 server_dir=$base_dir/server/
 
+function mpg123 {
+    $(which mpg123) -t $*
+}
+export -f mpg123
+
 setup() {
     bash $server_dir/server.sh 8676 &
     echo $! > $BATS_TMPDIR/server.pid
