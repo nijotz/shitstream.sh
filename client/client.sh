@@ -132,10 +132,6 @@ function main {
     hist_file=${SHIT_DIR}/history
     [ -f $hist_file ] && history -r $hist_file
 
-    tput smcup  # Save terminal screen
-    tput clear  # Clear screen
-    tput cup $(tput lines) 0  # Move cursor to last line, first column
-
     # Call logging startup manually, so logging can happen ASAP
     startup_logging
     log INFO "Calling startup function: startup_logging"
@@ -147,7 +143,11 @@ function main {
         $startup
     done
 
-    log INFO "Startup done, prompting user"
+    log INFO "Startup done, setting screen and prompting user"
+
+    tput smcup  # Save terminal screen
+    tput clear  # Clear screen
+    tput cup $(tput lines) 0  # Move cursor to last line, first column
 
     # Start prompt loop
     prompt
