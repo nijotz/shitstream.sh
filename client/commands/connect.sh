@@ -16,7 +16,7 @@ function command_connect {
     { exec 3<> /dev/tcp/$1/$2; } 2>/dev/null
     if [ $? -ne 0 ]; then
         print_text 'Connection refused'
-        return 1
+        return
     fi
 
     shit_server=$1
