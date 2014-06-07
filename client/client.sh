@@ -156,14 +156,15 @@ function main {
 function command_quit {
     helptext="duh."
 
-    status=${1:-good}
+    status=${*:-good}
 
     log INFO "Quitting ($status)"
 
     # If exiting because of error then show traceback
-    if [ "${1:-good}" != "bad" ]; then
+    if [ "$status" == "good" ]; then
         tput rmcup  # Restore original terminal output
     else
+        echo $status
         traceback 1
     fi
 
@@ -188,6 +189,7 @@ function command_quit {
 
     exit
 }
-trap "command_quit bad" SIGINT SIGTERM SIGHUP EXIT ERR
+trap "command_quit Caught signal" SIGINT SIGTERM SIGHUP
+trap "command_quit Error/exit" EXIT ERR
 
 main

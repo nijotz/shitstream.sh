@@ -9,6 +9,9 @@ function startup_player {
     touch $mpg123_out
 
     log INFO "Starting mpg123"
+    if ! which mpg123; then
+        command_quit 'mpg123 is required'
+    fi
     exec 7> >(
         mpg123 -R 2>/dev/null | while read line; do
             echo $line >> $mpg123_out
