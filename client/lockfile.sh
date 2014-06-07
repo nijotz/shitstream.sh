@@ -11,7 +11,7 @@ function lockclear {
     rm -f $1 2>/dev/null || rmdir $1 2>/dev/null
 }
 
-if ! which lockfile; then
+if ! which lockfile &>/dev/null ; then
 function lockfile {
     lockdir $(echo "${@: -1}")
 }
