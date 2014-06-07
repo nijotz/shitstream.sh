@@ -118,7 +118,7 @@ function main {
 
     # Source files, now that SHIT_DIR is set
     for f in $(dirname $0)/*; do
-        if [ $f != $0 ] && [ -f $f ]; then
+        if [ $(basename $f) != $(basename $0) ] && [ -f $f ]; then
             echo "Sourcing $f"
             source $f
         fi
