@@ -43,6 +43,9 @@ function kill_tree {
     if [ $_children -eq 0 ]; then
         log DEBUG "Killing $_pid"
         kill -${_sig} ${_pid} 2>/dev/null || true
+
+        # mpg123 won't die until we undo the "STOP" above
+        kill -cont ${_pid} 2>/dev/null || true
     fi
 }
 
