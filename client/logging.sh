@@ -3,6 +3,8 @@
 # STDERR can't be used because it confuses tput and fucks up the screen
 # http://stackoverflow.com/questions/21763397/curious-tput-behavior-with-stderr-redirection
 
+SHIT_LOGGING_FORMAT=$'[$(date "+%Y-%m-%d %H:%M:%S")] [$level] $msg'
+
 function startup_logging {
     exec 9>> ${SHIT_DIR}/client.log
 }
@@ -21,5 +23,5 @@ function log {
         level="ERROR"
     fi
 
-    echo "[$(date)] [${level}] $msg" >&9
+    eval echo $SHIT_LOGGING_FORMAT >&9
 }
