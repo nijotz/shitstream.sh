@@ -1,12 +1,12 @@
 #!/bin/bash
 
-mpg123_out=${SHIT_DIR}/mpg123.out
+mpg123_out="${SHIT_DIR}/mpg123.out"
 
 function startup_player {
 
     # jesus fuck, bash makes me do stupid shit
-    rm -f $mpg123_out
-    touch $mpg123_out
+    rm -f "$mpg123_out"
+    touch "$mpg123_out"
 
     log INFO "Starting mpg123"
     if ! which mpg123 > /dev/null; then
@@ -14,7 +14,7 @@ function startup_player {
     fi
     exec 7> >(
         mpg123 -R 2>/dev/null | while read line; do
-            echo $line >> $mpg123_out
+            echo "$line" >> "$mpg123_out"
         done
     )
     log DEBUG "Started mpg123"
@@ -39,16 +39,16 @@ function cleanup_player {
     exec 7<&-
     log DEBUG "mpg123 file descriptor closed"
 
-    rm -f ${SHIT_DIR}/toilet  # Used to communicate player status to status bar
-    rm -f ${SHIT_DIR}/mpg123.in
-    rm -f ${SHIT_DIR}/mpg123.out
+    rm -f "${SHIT_DIR}/toilet"  # Used to communicate player status to status bar
+    rm -f "${SHIT_DIR}/mpg123.in"
+    rm -f "${SHIT_DIR}/mpg123.out"
 }
 
 function update_status_bar {
-    status_connection=$1
-    status_current_mp3=$2
-    echo "status_connection=\"$1\"" > ${SHIT_DIR}/toilet
-    echo "status_current_mp3=\"$2\"" >> ${SHIT_DIR}/toilet
+    echo "status_connection=\"$1\"" > "${SHIT_DIR}/toilet"
+    echo "status_current_mp3=\"$2\"" >> "${SHIT_DIR}/toilet"
+    export status_connection="$1"
+    export status_current_mp3="$2"
     print_status_bar
 }
 
@@ -60,7 +60,7 @@ function identify_mp3 {
     if [ -z "$artist" ] && [ -z "$track" ]; then
         echo "Unidentified song"
     else
-        echo $artist - $track
+        echo "$artist" - "$track"
     fi
 }
 
@@ -74,22 +74,22 @@ function player_communication {
     output=""
     sleep_times=( 0.3 0.6 1 3 )
     while : ; do
-        if grep -q "${2:-""}" $mpg123_out; then
-            output=$(cat $mpg123_out)
+        if grep -q "${2:-""}" "$mpg123_out"; then
+            output=$(cat "$mpg123_out")
             break
         fi
         [ $tries -lt 3 ] || break
         log DEBUG "No mpg123 output, trying again"
-        tries=$(( $tries + 1 ))
+        tries=$(( tries + 1 ))
         sleep ${sleep_times[tries]}
     done
 
-    cat /dev/null > $mpg123_out
+    cat /dev/null > "$mpg123_out"
 
     log DEBUG "Got output from mpg123 :: $output ::"
 
     if [ -n "$output" ]; then
-        echo $output
+        echo "$output"
         return 0
     else
         return 1
@@ -106,7 +106,7 @@ function play_stream {
     while [ $playing -eq 1 ]; do
 
         # Open connection to server
-        exec 4<> /dev/tcp/$shit_server/$shit_port
+        exec 4<> "/dev/tcp/$shit_server/$shit_port"
 
         # Set protocol and ask for mp3
         echo -e "SHIT 1\nshit_on_me\n" >&4
@@ -119,12 +119,12 @@ function play_stream {
         print_text "Receiving mp3 from server"
 
         # Read mp3 data
-        dd bs=1 count=$length <&4 > ${SHIT_DIR}/mp3 2>/dev/null
+        dd bs=1 count="$length" <&4 > "${SHIT_DIR}/mp3" 2>/dev/null
         print_text "mp3 received, playing"
         exec 4<&-
 
         # Update status bar
-        update_status_bar "Playing from $shit_server $shit_port" "$(identify_mp3 ${SHIT_DIR}/mp3)"
+        update_status_bar "Playing from $shit_server $shit_port" "$(identify_mp3 "${SHIT_DIR}/mp3")"
 
         # Load song
         output=$(player_communication "L ${SHIT_DIR}/mp3")
@@ -139,10 +139,10 @@ function play_stream {
     done
 }
 
-player_paused=0
+player_pause=0
 function player_pause {
     output=$(player_communication P @P)
     log DEBUG "Pause output: $output"
     player_pause=$( [ "$output" == "@P 1" ] ; echo $? )
-    return $player_pause
+    return "$player_pause"
 }

@@ -1,5 +1,5 @@
 function command_ping {
-    helptext="Test connection"
+    helptext="Test connection" # shellcheck disable=SC2034
 
     if ! is_connected; then
         print_text 'Not connected'

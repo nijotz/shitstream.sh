@@ -6,13 +6,15 @@
 SHIT_LOGGING_FORMAT=$'[$(date "+%Y-%m-%d %H:%M:%S")] [$level] $msg'
 SHIT_LOGGING_LEVEL=DEBUG
 
-_SHIT_LOGGING_ERROR=3
-_SHIT_LOGGING_WARN=2
-_SHIT_LOGGING_INFO=1
-_SHIT_LOGGING_DEBUG=0
+_SHIT_LOGGING_ERROR=3 # shellcheck disable=SC2034
+_SHIT_LOGGING_WARN=2  # shellcheck disable=SC2034
+_SHIT_LOGGING_INFO=1  # shellcheck disable=SC2034
+_SHIT_LOGGING_DEBUG=0 # shellcheck disable=SC2034
 
 function startup_logging {
-    exec 9>> ${SHIT_DIR}/client.log
+    logfile="${SHIT_DIR}/client.log"
+    echo Logging to "$logfile"
+    exec 9>> "$logfile"
 }
 
 function cleanup_logging {
@@ -20,15 +22,15 @@ function cleanup_logging {
 }
 
 function logging_number {
-    eval echo \$_SHIT_LOGGING_$1
+    eval echo \$_SHIT_LOGGING_"$1"
 }
 
 function log {
-    level=$(echo $1 | tr '[:lower:]' '[:upper:]')
+    level=$(echo "$1" | tr '[:lower:]' '[:upper:]')
     shift
     msg=$*
 
-    level_num=$(logging_number $level)
+    level_num=$(logging_number "$level")
     min_num=$(logging_number $SHIT_LOGGING_LEVEL)
     if [[ -z $level_num ]]; then
         msg="$level $msg"
@@ -36,7 +38,7 @@ function log {
         level_num=$(logging_number $level)
     fi
 
-    if [[ $level_num -ge min_num ]]; then
+    if [[ $level_num -ge $min_num ]]; then
         eval echo $SHIT_LOGGING_FORMAT >&9
     fi
 }

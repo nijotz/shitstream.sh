@@ -5,15 +5,15 @@ shit_port=""
 
 connection_pid=0
 function command_connect {
-    helptext="Connect to a stream of shit"
-    helptext="Usage: connect <server> <port>"
+    helptext="Connect to a stream of shit" # shellcheck disable=SC2034
+    helptext="Usage: connect <server> <port>" # shellcheck disable=SC2034
 
     if [ -n "$shit_server" ]; then
         command_disconnect
     fi
 
     print_text "Connecting to $1:$2"
-    { exec 3<> /dev/tcp/$1/$2; } 2>/dev/null
+    { exec 3<> "/dev/tcp/$1/$2"; } 2>/dev/null
     if [ $? -ne 0 ]; then
         print_text 'Connection refused'
         return
@@ -36,13 +36,13 @@ function command_connect {
     connection_pid=$!
     log DEBUG "Connection pid: $connection_pid"
 
-    status_connection="Connected to $shit_server $shit_port"
+    export status_connection="Connected to $shit_server $shit_port"
     print_text "Connected to $1:$2"
 }
 
 function command_disconnect {
-    helptext="Disconnect from current stream of shit"
-    helptext="Usage: disconnect"
+    helptext="Disconnect from current stream of shit" # shellcheck disable=SC2034
+    helptext="Usage: disconnect" # shellcheck disable=SC2034
 
     if ! is_connected; then
         print_text "Not connected"
@@ -55,8 +55,8 @@ function command_disconnect {
         command_stop
     fi
 
-    kill $connection_pid
-    wait $connection_pid
+    kill "$connection_pid"
+    wait "$connection_pid"
     shit_server=""
     shit_port=""
     connection_pid=0

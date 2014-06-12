@@ -1,11 +1,9 @@
 #!/bin/bash
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
 stream_pid=0
 function command_play {
-    helptext="Play some shit that's on the server"
-    helptext="Usage: play"
+    helptext="Play some shit that's on the server" # shellcheck disable=SC2034
+    helptext="Usage: play" # shellcheck disable=SC2034
 
     if ! is_connected; then
         print_text "You need to connect first"
@@ -22,22 +20,24 @@ function command_play {
 }
 
 function command_stop {
-    helptext="Stop playing the shit coming from the server"
-    helptext="Usage: stop"
+    helptext="Stop playing the shit coming from the server" # shellcheck disable=SC2034
+    helptext="Usage: stop" # shellcheck disable=SC2034
 
     if is_streaming; then
-        kill $stream_pid
-        wait $stream_pid
+        kill "$stream_pid"
+        wait "$stream_pid"
         stream_pid=0
-        status_connection="Connected to $shit_server $shit_port"
+        #TODO: shit needs to go in the toilet
+        export status_connection="Connected to $shit_server $shit_port"
     fi
 }
 
 function command_pause {
-    helptext="Pause/unpause the shit coming from the server"
-    helptext="Usage: pause"
+    helptext="Pause/unpause the shit coming from the server" # shellcheck disable=SC2034
+    helptext="Usage: pause" # shellcheck disable=SC2034
 
     if is_streaming; then
+        # shellcheck disable=SC2015
         player_pause && print_text Paused || print_text Unpaused
     else
         print_text "Not streaming"

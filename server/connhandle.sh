@@ -12,12 +12,12 @@ mkdir -p ${MP3DIR}/in
 
 # For now just echo, will add verbosity options later
 function v {
-    echo $*
+    echo "$*"
 }
 
 CURRENT="current"
 #STANDBY="trumpet.mp3"
-trap "rm -f $LOCKFILE; exit" INT TERM EXIT
+trap 'rm -f $LOCKFILE; exit' INT TERM EXIT
 
 
 # Makes assumptions about cwd
@@ -32,7 +32,7 @@ function download_youtube_mp3 {
     pushd youtube > /dev/null
 
     v "Connecting to URL"
-    if ! curl -I $_url >/dev/null 2>&1; then
+    if ! curl -I "$_url" >/dev/null 2>&1; then
         v "Couldn't connect"
         return 1
     fi
@@ -44,10 +44,10 @@ function download_youtube_mp3 {
     # but also log it to the terminal
     exec 4>&1
     local _output=$(youtube-dl --keep --extract-audio --audio-format mp3 \
-        --no-post-overwrites $_url | tee >(cat - >&4))
+        --no-post-overwrites "$_url" | tee >(cat - >&4))
 
     local _alreadyexists=$(echo "$_output" | grep -c 'exists, skipping')
-    if [ $_alreadyexists -gt 0 ]; then
+    if [ "$_alreadyexists" -gt 0 ]; then
         v "MP3 exists, skipping conversion"
         local _mp3namestart='.*Post-process file \(.*\) exists, skipping'
         local _mp3=$(echo "$_output" | grep "$_mp3namestart" | sed "s/$_mp3namestart/\1/")
@@ -65,13 +65,19 @@ function download_youtube_mp3 {
     fi
 
     # eval bad. $'...' good.
-    eval $_returnvar=$'$_mp3'
+    eval "$_returnvar"=$'$_mp3'
+}
+
+function read_line {
+    # Read a line, but get rid of linefeed so I can test with telnet
+    read line
+    line=$(echo "$line" | tr -d '\r')
+    echo "$line"
 }
 
 function connection_handler {
 
-    read line;
-    apiversion=$line
+    apiversion=$(read_line)
 
     re='SHIT [0-9][0-9]*'
     if [[ ! $apiversion =~ $re ]]; then
@@ -80,28 +86,28 @@ function connection_handler {
         exit 1
     fi
 
-
     # TODO: load api files
 
     v "Handling command"
     while true; do
-        read line; command=$line
+        command=$(read_line)
 
         local i=0
-        read line
+        line=$(read_line)
         while [ ! -z "$line" ]; do
             options[i]=$line
-            i=$(($i + 1))
-            read line
+            v "Line :${line}:"
+            i=$((i + 1))
+            line=$(read_line)
         done
 
-        if ! output=$(declare -f | grep "command_${command} ()"); then
+        if ! declare -f | grep "command_${command} ()" &>/dev/null; then
             v "Invalid command: $command"
-            echo Invalid command: $command >&3
+            echo "Invalid command: $command" >&3
             echo >&3
         else
             v "Running command: $command"
-            command_$command "${options[@]}"
+            command_"$command" "${options[@]}"
         fi
     done
 }
@@ -109,8 +115,8 @@ function connection_handler {
 function command_ping {
     v "PONGing a PING"
     echo pong >&3
-    while [[ $# > 0 ]] ; do
-        echo $1 >&3
+    while [[ $# -gt 0 ]] ; do
+        echo "$1" >&3
         shift
     done
     echo >&3
@@ -131,7 +137,7 @@ function process_mp3 {
 
     v "Linking mp3"
     pushd ${MP3DIR} > /dev/null
-    ln -s "in/$mp3" $(date +%s.%N).mp3
+    ln -s "in/$mp3" "$(date +%s.%N).mp3"
     popd > /dev/null
 
     echo -e "Added mp3\n" >&3
@@ -147,7 +153,7 @@ function command_shit_url {
         v "It's a youtube URL"
         mp3=""
         pushd ${MP3DIR}/in/ > /dev/null
-        download_youtube_mp3 $url mp3
+        download_youtube_mp3 "$url" mp3
         popd > /dev/null
         exitstatus=$?
 
@@ -167,7 +173,7 @@ function command_shit_mp3 {
     length=$1
     mp3=$(date +%s.%N).mp3
     pushd ${MP3DIR}/in > /dev/null
-    head -c $length > $mp3
+    head -c "$length" > "$mp3"
     popd > /dev/null
     process_mp3 "$mp3"
     echo "mp3 received" >&3
@@ -202,7 +208,7 @@ function command_shit_on_me {
     current_time=$(date +%s)
     v "Song expires at: $expires"
     v "Date is: $current_time"
-    if [ ! -z "$expires" ] && [ $expires -lt $current_time ]; then
+    if [ ! -z "$expires" ] && [ "$expires" -lt "$current_time" ]; then
         v "Expiring current song"
         rm -f "$current_mp3"
         cat "/dev/null" > $CURRENT
@@ -224,13 +230,13 @@ function command_shit_on_me {
         # Not a valid mp3
         if [ -z "$length" ]; then
             v "$file is not a valid mp3, removing"
-            rm $file
+            rm "$file"
             continue
         fi
 
         # Found a file, stream and break from loop
-        echo $file > $CURRENT
-        echo $(( $length + $current_time ))>> $CURRENT
+        echo "$file" > "$CURRENT"
+        echo $(( length + current_time )) >> "$CURRENT"
 
         v "Streaming $file"
         stream_song "$file"

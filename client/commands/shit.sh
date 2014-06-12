@@ -8,7 +8,7 @@ function command_shit {
 
     function shit_the_bed {
         print_text "${bld}You shit the bed${nrm}"
-        print_text $(printf -- '%s\n' "${helptext[@]:1}")
+        print_text "$(printf -- '%s\n' "${helptext[@]:1}")"
         return
     }
 
@@ -22,23 +22,23 @@ function command_shit {
         return
     fi
 
-    if [ $1 == -f ]; then
-        mp3=$(echo $2 | sed "s!^\~!${HOME}!")
+    if [ "$1" == -f ]; then
+        mp3=$(echo "$2" | sed "s!^\~!${HOME}!")
 
-        if [ ! -f $mp3 ]; then
+        if [ ! -f "$mp3" ]; then
             print_text "File not found: $mp3"
             return
         fi
 
         echo "shit_mp3" >&3
         echo >&3
-        cat $mp3 >&3
+        cat "$mp3" >&3
         print_client_text "shit_mp3 <data>"
         print_text "Sent mp3 to server"
         return
     fi
 
-    if [ $1 == -u ]; then
+    if [ "$1" == -u ]; then
         echo "shit_url" >&3
         echo "$2" >&3
         echo >&3
