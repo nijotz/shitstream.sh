@@ -138,9 +138,11 @@ function main {
     [ -f "$hist_file" ] && history -r "$hist_file"
 
     # Configuring should happen first so that all the vars are set
+    echo "Loading config"
     startup_config
 
     # Logging needs to happen ASAP, but needs config vars before startup
+    echo "Setting up logging"
     startup_logging
     log INFO "Called startup function: startup_logging"
 
