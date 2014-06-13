@@ -14,7 +14,9 @@ function command_loadcfg {
     helptext="  cfgfile	Config file to load (default: ~/.shitstream/config)" # shellcheck disable=SC2034
 
     cfg=${1:-${SHIT_DIR}/config}
-    [ -f "$cfg" ] && source "$cfg"
+    if [ -f "$cfg" ]; then
+        source "$cfg"
+    fi
 }
 
 function command_savecfg {
