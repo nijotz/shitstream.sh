@@ -30,9 +30,13 @@ function test_status_output {
     [ $(echo ${lines[@]} | grep -c "$3") -ne "0" ]
 }
 
+function run_client {
+    bash $client_dir/client.sh -d "$BATS_TMPDIR/shistream/"
+}
+
 @test "Test connection" {
     function good_connection {
-        echo connect 0.0.0.0 8676 | bash $client_dir/client.sh
+        echo connect 0.0.0.0 8676 | run_client
     }
     test_status_output \
         good_connection \
@@ -42,7 +46,7 @@ function test_status_output {
 
 @test "Test handling of bad connection" {
     function bad_connection {
-        echo connect 0.0.0.0 8677 | bash $client_dir/client.sh
+        echo connect 0.0.0.0 8677 | run_client
     }
     test_status_output \
         bad_connection \
@@ -57,7 +61,7 @@ function ping {
     while [ "$line" != "quit" ]; do
         read line < $fifo
         echo $line
-    done | bash $client_dir/client.sh &
+    done | run_client &
     echo 'connect 0.0.0.0 8676' > $fifo
     sleep 2
     echo 'ping' > $fifo
