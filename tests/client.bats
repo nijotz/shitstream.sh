@@ -30,7 +30,7 @@ function test_status_output {
     run $1
     echo "Status: $status"
     # Breaks on linux, tests just hang here
-    #echo "Output: ${lines[@]}" | col -b # Get rid of esc sequences
+    echo "Output: ${lines[@]}" #| col -b # Get rid of esc sequences
     [ "$status" -eq $2 ]
     [ $(echo ${lines[@]} | grep -c "$3") -ne "0" ]
 }
