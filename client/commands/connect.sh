@@ -67,6 +67,8 @@ function command_disconnect {
 }
 
 function is_connected {
-    [ "$connection_pid" -eq 0 ] && return 1
+    if [ "$connection_pid" -eq 0 ]; then
+        return 1
+    fi
     return 0
 }
