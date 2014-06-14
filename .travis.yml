@@ -3,5 +3,8 @@ language: bash
 before_script:
     - sudo apt-get install -y nmap mpg123
     - curl -L "https://github.com/sstephenson/bats/archive/v0.3.1.tar.gz" | tar zx
+    - sudo mv /usr/bin/mpg123{,.real}
+    - sudo su -c 'echo -e \#\!/bin/bash\\n/usr/bin/mpg123.real -t \$* > /usr/bin/mpg123'
+    - sudo chmod +x /usr/bin/mpg123
 
 script: ./bats-0.3.1/bin/bats --tap tests
