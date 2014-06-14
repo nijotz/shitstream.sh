@@ -25,7 +25,7 @@ function cleanup_display {
 function print_text {
 
     #log DEBUG "Acquiring lockfile for screen output"
-    lockfile -1 -r 60 "${SHIT_DIR}/output.lock"
+    lockfile -t 1 -r 60 "${SHIT_DIR}/output.lock"
 
     lines=$(tput lines)
     last1=$(( lines - 2 ))
@@ -58,7 +58,7 @@ function print_client_text {
 }
 
 function print_status_bar {
-    lockfile -1 -r 60 "${SHIT_DIR}/output.lock"
+    lockfile -t 1 -r 60 "${SHIT_DIR}/output.lock"
 
     tput sc  # Save cursor position
     tput cup 0 0  # Move to top left

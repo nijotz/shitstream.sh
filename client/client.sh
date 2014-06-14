@@ -151,6 +151,10 @@ function main {
         $startup
     done
 
+    function v {
+        log DEBUG $*
+    }
+
     log INFO "Startup done, setting screen and prompting user"
 
     tput smcup  # Save terminal screen
