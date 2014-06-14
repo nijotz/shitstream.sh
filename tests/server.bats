@@ -1,7 +1,12 @@
 #!/usr/bin/env bats
 
+run=bash
+if [ -n "$SHCOV" ]; then
+    run=shcov
+fi
+
 setup() {
-    bash server/server.sh 8676 &
+    $run server/server.sh 8676 &
     echo $! > $BATS_TMPDIR/server.pid
     sleep 1
 }

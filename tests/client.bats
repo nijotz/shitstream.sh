@@ -4,13 +4,18 @@ base_dir=$(pwd) # Assume we're in the root path of the source
 client_dir=$base_dir/client/
 server_dir=$base_dir/server/
 
+run=bash
+if [ -n "$SHCOV" ]; then
+    run=shcov
+fi
+
 function mpg123 {
     $(which mpg123) -t $*
 }
 export -f mpg123
 
 setup() {
-    bash $server_dir/server.sh 8676 &
+    $run $server_dir/server.sh 8676 &
     echo $! > $BATS_TMPDIR/server.pid
     sleep 1
 }
@@ -31,7 +36,7 @@ function test_status_output {
 }
 
 function run_client {
-    bash $client_dir/client.sh -d "$BATS_TMPDIR/shistream/"
+    $run $client_dir/client.sh -d "$BATS_TMPDIR/shistream/"
 }
 
 @test "Test connection" {
