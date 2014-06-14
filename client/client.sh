@@ -84,6 +84,7 @@ function handle_input {
     if ! declare -f | grep "command_${command} ()" &>/dev/null; then
         print_text Invalid command: "$command"
     else
+        log DEBUG "Running command: ${command}"
         "command_$command" "$@" || return $?
     fi
 }
