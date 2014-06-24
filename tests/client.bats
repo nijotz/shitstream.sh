@@ -59,20 +59,29 @@ function run_client {
         'Connecting to 0.0.0.0:8677.*Connection refused'
 }
 
-function ping {
+# Run all arguments as commands with a sleep in between
+function client_commands {
+
     fifo=${BATS_TMPDIR}/client.fifo
     mkfifo $fifo
     line=""
+
     while [ "$line" != "quit" ]; do
         read line < $fifo
         echo $line
     done | run_client &
-    echo 'connect 0.0.0.0 8676' > $fifo
-    sleep 2
-    echo 'ping' > $fifo
-    sleep 2
-    echo 'quit' > $fifo
+
+    for cmd in "$@"; do
+        echo "$cmd" > $fifo
+        sleep 1
+    done
+    echo "quit" > $fifo
+
     rm -f $fifo
+}
+
+function ping {
+    client_commands 'connect 0.0.0.0 8676' 'ping'
 }
 
 @test "Test client ping" {
@@ -82,4 +91,18 @@ function ping {
 @test "Test client cleanup" {
     run ping
     [ "$(ls ~/.shitstream | grep -Ev '(^history$|^config$|^mp3$|^client.log$)' | wc -l)" == "0" ]
+}
+
+@test "Test playing" {
+    function play {
+        client_commands 'connect 0.0.0.0 8676' 'play' 'help'
+    }
+    test_status_output play 0 '.'
+}
+
+@test "Test typing play twice" {
+    function playplay {
+        client_commands 'connect 0.0.0.0 8676' 'play' 'play'
+    }
+    test_status_output playplay 0 '.'
 }
