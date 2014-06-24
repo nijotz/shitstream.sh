@@ -98,8 +98,8 @@ function player_communication {
 
 playing=0
 function play_stream {
-    # Intended to be backgrounded. If not background these traps will clear the
-    # main process's traps
+    # Intended to be backgrounded. If not backgrounded, these traps will clear
+    # the main process's traps
     trap "cleanup_player; playing=0; exit" SIGINT SIGTERM SIGHUP
 
     playing=1

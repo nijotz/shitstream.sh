@@ -15,6 +15,7 @@ function command_play {
         return 1
     fi
 
+    log DEBUG "Launching player background process"
     play_stream &
     stream_pid=$!
 }
