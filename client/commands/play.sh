@@ -25,7 +25,8 @@ function command_stop {
     helptext="Usage: stop" # shellcheck disable=SC2034
 
     if is_streaming; then
-        kill "$stream_pid"
+        stop_stream
+        kill_tree "$stream_pid"
         wait "$stream_pid"
         stream_pid=0
         #TODO: shit needs to go in the toilet

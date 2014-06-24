@@ -139,6 +139,12 @@ function play_stream {
     done
 }
 
+function stop_stream {
+    print_text "Stopping playback"
+    player_communication "S" "@P 0"
+    print_text "Playback stopped"
+}
+
 player_pause=0
 function player_pause {
     output=$(player_communication P @P)
