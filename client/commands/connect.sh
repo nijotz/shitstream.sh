@@ -46,7 +46,7 @@ function command_disconnect {
 
     if ! is_connected; then
         print_text "Not connected"
-        return 1
+        return
     fi
 
     print_text "Disconnecting from ${shit_server}:${shit_port}"

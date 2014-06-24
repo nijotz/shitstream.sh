@@ -12,7 +12,7 @@ function command_play {
 
     if is_streaming; then
         print_text "Currently streaming, disconnect first"
-        return 1
+        return
     fi
 
     log DEBUG "Launching player background process"
