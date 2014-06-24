@@ -25,7 +25,7 @@ function command_connect {
     echo -e 'SHIT 1' >&3
 
     (
-        trap command_disconnect EXIT
+        trap "is_connected && command_disconnect" EXIT
         while true; do
             read line <&3
             if [ -n "$line" ]; then
