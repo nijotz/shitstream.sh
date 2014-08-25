@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/nijotz/shitstream.svg?branch=master)](https://travis-ci.org/nijotz/shitstream)
+[![Build Status](https://travis-ci.org/nijotz/shitstream-bash.svg?branch=master)](https://travis-ci.org/nijotz/shitstream-bash)
 
 This was fun, but in the end infuriatingly stupid.  "Let's see how far I can push bash".  No.  Bad.  I learned a lot, things I'll probably never have a use for.  A less hipster, more mainstream version of shitstream can be found [here](https://gtihub.com/nijotz/shitstream).  I leave this here as an example to others that may consider writing more than 100 lines of bash for a project.
 
